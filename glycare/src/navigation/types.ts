@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Inicio:    undefined;
   Login:     undefined;
   Cadastrar: undefined;
+  MainApp:   undefined;
 };
 
 // Telas dentro do menu lateral

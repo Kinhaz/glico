@@ -11,7 +11,7 @@ import CustomDrawer from "../components/CustomDrawer";
 import InicioScreen    from "../screens/InicioScreen";
 import LoginScreen     from "../screens/LoginScreen";
 import CadastrarScreen from "../screens/CadastrarScreen";
-
+import RelatoriosScreen from "../screens/RelatoriosScreen";
 // ── Screens dentro do menu ──
 // import PerfilScreen         from "../screens/PerfilScreen";
 // import EspacoFamiliarScreen from "../screens/EspacoFamiliarScreen";
@@ -61,7 +61,7 @@ function DrawerNavigator() {
       <Drawer.Screen name="Perfil"         component={Placeholder("Perfil")}         options={{ title: "Perfil" }} />
       <Drawer.Screen name="EspacoFamiliar" component={Placeholder("Espaço Familiar")} options={{ title: "Espaço Familiar" }} />
       <Drawer.Screen name="Monitorar"      component={Placeholder("Monitorar")}      options={{ title: "Monitorar" }} />
-      <Drawer.Screen name="Relatorios"     component={Placeholder("Relatórios")}     options={{ title: "Relatórios" }} />
+      <Drawer.Screen name="Relatorios"     component={RelatoriosScreen}             options={{ title: "Relatórios" }} />
       <Drawer.Screen name="Configuracoes"  component={Placeholder("Configurações")}  options={{ title: "Configurações" }} />
 
       {/* Quando criar as screens reais, substitua Placeholder() pelo componente:
@@ -91,7 +91,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Cadastrar" component={CadastrarScreen} />
 
       {/* Depois do login, entra no DrawerNavigator */}
-      <Stack.Screen name="Inicio" component={DrawerNavigator} />
+      <Stack.Screen name="MainApp" component={DrawerNavigator} />
     </Stack.Navigator>
   );
 }
