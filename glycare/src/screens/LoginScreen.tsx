@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +19,7 @@ import { useFonts, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
 import { DMSans_400Regular, DMSans_500Medium } from "@expo-google-fonts/dm-sans";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
+import { supabase } from "../lib/supabase";
 
 // =========================================
 // CORES
@@ -45,20 +47,43 @@ type Props = {
 };
 
 export default function LoginScreen({ navigation }: Props) {
-  const [email, setEmail]             = useState("");
-  const [senha, setSenha]             = useState("");
+  const [email, setEmail]               = useState("");
+  const [senha, setSenha]               = useState("");
   const [senhaVisible, setSenhaVisible] = useState(false);
+  const [loading, setLoading]           = useState(false);
 
   const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_500Medium });
   if (!fontsLoaded) return null;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !senha) {
       Alert.alert("Atenção", "Preencha e-mail e senha.");
       return;
     }
-    // ← navegue para a tela principal após login
-    navigation.navigate("Inicio");
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: senha,
+      });
+
+      if (error) {
+        Alert.alert("Erro ao entrar", "E-mail ou senha incorretos.");
+        return;
+      }
+
+      // Login ok — vai para o app principal
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "MainApp" }],
+      });
+    } catch (err) {
+      Alert.alert("Erro", "Ocorreu um erro inesperado. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,11 +109,7 @@ export default function LoginScreen({ navigation }: Props) {
         >
           {/* Logo */}
           <View style={styles.logoWrap}>
-            <Image
-              source={{ uri: LOGO_URL }}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
           </View>
 
           {/* Formulário */}
@@ -139,11 +160,25 @@ export default function LoginScreen({ navigation }: Props) {
 
           {/* Botão Entrar */}
           <TouchableOpacity
-            style={styles.loginBtn}
+            style={[styles.loginBtn, loading && { opacity: 0.7 }]}
             activeOpacity={0.85}
             onPress={handleLogin}
+            disabled={loading}
           >
-            <Text style={styles.loginBtnText}>Entrar</Text>
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.loginBtnText}>Entrar</Text>
+            }
+          </TouchableOpacity>
+
+          {/* Link para cadastro */}
+          <TouchableOpacity
+            style={styles.cadastroLink}
+            onPress={() => navigation.navigate("Cadastrar")}
+          >
+            <Text style={styles.cadastroLinkText}>
+              Não tem conta? <Text style={styles.cadastroLinkBold}>Cadastrar</Text>
+            </Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -153,85 +188,21 @@ export default function LoginScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  inner: {
-    flex: 1,
-    paddingHorizontal: 28,
-  },
-  backBtn: {
-    paddingVertical: 12,
-    alignSelf: "flex-start",
-  },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingBottom: 32,
-    gap: 32,
-  },
-
-  // Logo
-  logoWrap: {
-    alignItems: "center",
-  },
-  logo: {
-    width: 140,
-    height: 60,
-  },
-
-  // Formulário
-  form: {
-    gap: 20,
-  },
-  fieldWrap: {
-    gap: 8,
-  },
-  label: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 13,
-    color: COLORS.label,
-    letterSpacing: 0.2,
-    textAlign: "center",
-  },
-  input: {
-    backgroundColor: COLORS.input,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    height: 46,
-    paddingHorizontal: 16,
-    fontFamily: "DMSans_400Regular",
-    fontSize: 14,
-    color: COLORS.inputText,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.input,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    height: 46,
-    paddingRight: 12,
-  },
-  eyeBtn: {
-    padding: 4,
-  },
-
-  // Botão
-  loginBtn: {
-    backgroundColor: COLORS.btnBg,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loginBtnText: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 16,
-    color: COLORS.btnText,
-    letterSpacing: 0.3,
-  },
+  container:        { flex: 1, backgroundColor: COLORS.bg },
+  inner:            { flex: 1, paddingHorizontal: 28 },
+  backBtn:          { paddingVertical: 12, alignSelf: "flex-start" },
+  scroll:           { flexGrow: 1, justifyContent: "center", paddingBottom: 32, gap: 32 },
+  logoWrap:         { alignItems: "center" },
+  logo:             { width: 140, height: 60 },
+  form:             { gap: 20 },
+  fieldWrap:        { gap: 8 },
+  label:            { fontFamily: "DMSans_500Medium", fontSize: 13, color: COLORS.label, letterSpacing: 0.2, textAlign: "center" },
+  input:            { backgroundColor: COLORS.input, borderRadius: 12, borderWidth: 1, borderColor: COLORS.inputBorder, height: 46, paddingHorizontal: 16, fontFamily: "DMSans_400Regular", fontSize: 14, color: COLORS.inputText },
+  inputRow:         { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.input, borderRadius: 12, borderWidth: 1, borderColor: COLORS.inputBorder, height: 46, paddingRight: 12 },
+  eyeBtn:           { padding: 4 },
+  loginBtn:         { backgroundColor: COLORS.btnBg, borderRadius: 14, paddingVertical: 16, alignItems: "center", justifyContent: "center" },
+  loginBtnText:     { fontFamily: "DMSans_500Medium", fontSize: 16, color: COLORS.btnText, letterSpacing: 0.3 },
+  cadastroLink:     { alignItems: "center", paddingTop: 4 },
+  cadastroLinkText: { fontFamily: "DMSans_400Regular", fontSize: 13, color: COLORS.label },
+  cadastroLinkBold: { fontFamily: "DMSans_500Medium", color: "#A5B4FC" },
 });
