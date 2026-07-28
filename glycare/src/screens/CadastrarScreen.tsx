@@ -21,9 +21,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { supabase } from "../lib/supabase";
 
-// =========================================
-// CORES
-// =========================================
 const COLORS = {
   bg:          "#1E1B4B",
   input:       "#2D2A6E",
@@ -37,14 +34,19 @@ const COLORS = {
   white:       "#FFFFFF",
 };
 
-// =========================================
-// CONFIGURAÇÕES
-// =========================================
 const LOGO_URL = "https://snipboard.io/dGebyq.jpg";
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Cadastrar">;
 };
+
+// Formata automaticamente a data enquanto o usuário digita: 01021990 → 01/02/1990
+function formatarData(valor: string): string {
+  const numeros = valor.replace(/\D/g, "").slice(0, 8);
+  if (numeros.length <= 2) return numeros;
+  if (numeros.length <= 4) return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+  return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(4)}`;
+}
 
 export default function CadastrarScreen({ navigation }: Props) {
   const [nome, setNome]                         = useState("");
@@ -60,6 +62,7 @@ export default function CadastrarScreen({ navigation }: Props) {
   if (!fontsLoaded) return null;
 
   const handleCadastrar = async () => {
+    // ── Validações ──────────────────────────────────────────────
     if (!nome || !email || !senha || !confirmarSenha || !dataNasc) {
       Alert.alert("Atenção", "Preencha todos os campos.");
       return;
@@ -72,12 +75,16 @@ export default function CadastrarScreen({ navigation }: Props) {
       Alert.alert("Atenção", "A senha deve ter pelo menos 6 caracteres.");
       return;
     }
+    if (dataNasc.length !== 10) {
+      Alert.alert("Atenção", "Data de nascimento inválida. Use DD/MM/AAAA.");
+      return;
+    }
 
     setLoading(true);
 
     try {
-      // 1. Cria o usuário na autenticação do Supabase
-      const { data, error } = await supabase.auth.signUp({
+      // ── 1. Cria o usuário no Supabase Auth ───────────────────
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password: senha,
         options: {
@@ -88,27 +95,77 @@ export default function CadastrarScreen({ navigation }: Props) {
         },
       });
 
-      if (error) {
-        Alert.alert("Erro ao cadastrar", error.message);
+      if (signUpError) {
+        Alert.alert("Erro ao cadastrar", signUpError.message);
         return;
       }
 
-      // 2. Salva o perfil na tabela "perfis"
-      if (data.user) {
-        await supabase.from("perfis").insert({
-          id:              data.user.id,
-          nome_completo:   nome,
-          email:           email.trim(),
-          data_nascimento: dataNasc,
-        });
+      // ── 2. Pega o ID do usuário recém-criado ─────────────────
+      // data.user existe mesmo quando "Confirm email" está ativo.
+      // data.session só existe quando a confirmação está desativada.
+      const userId = data.user?.id;
+
+      if (!userId) {
+        // Isso acontece se o e-mail já estiver cadastrado e não confirmado.
+        Alert.alert(
+          "Atenção",
+          "Não foi possível obter o ID do usuário. Verifique se o e-mail já está cadastrado ou confirme seu e-mail."
+        );
+        return;
       }
 
+      // ── 3. Insere o perfil na tabela "perfis" ────────────────
+      // Se "Confirm email" estiver ATIVO no Supabase, ainda não há sessão
+      // neste momento, então auth.uid() = null e a RLS bloquearia o insert.
+      // A solução é usar signInWithPassword logo após o signUp para criar
+      // a sessão antes de inserir — OU desativar "Confirm email" no painel.
+      //
+      // Se você desativou "Confirm email": data.session já existe → insert funciona.
+      // Se ainda está ativo: faça login imediato abaixo para obter sessão.
+
+      if (!data.session) {
+        // "Confirm email" está ativo — tenta logar para obter sessão
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: senha,
+        });
+
+        if (loginError) {
+          // Usuário criado mas sem sessão — avisa para confirmar e-mail
+          Alert.alert(
+            "Cadastro criado!",
+            "Confirme seu e-mail para ativar a conta e depois faça login.",
+            [{ text: "OK", onPress: () => navigation.navigate("Login") }]
+          );
+          return;
+        }
+      }
+
+      // Neste ponto temos sessão garantida → RLS permite o insert
+      const { error: insertError } = await supabase.from("perfis").insert({
+        id:              userId,
+        nome_completo:   nome,
+        email:           email.trim(),
+        data_nascimento: dataNasc,  // salvo como text conforme sua tabela
+      });
+
+      if (insertError) {
+        console.error("Erro ao salvar perfil:", insertError);
+        Alert.alert(
+          "Erro ao salvar perfil",
+          `${insertError.message}\n\nCódigo: ${insertError.code}`
+        );
+        return;
+      }
+
+      // ── 4. Sucesso ───────────────────────────────────────────
       Alert.alert(
         "Cadastro realizado!",
-        "Bem-vindo ao GlyCare. Faça login para continuar.",
-        [{ text: "OK", onPress: () => navigation.navigate("Login") }]
+        "Bem-vindo ao GlyCare.",
+        [{ text: "OK", onPress: () => navigation.reset({ index: 0, routes: [{ name: "MainApp" }] }) }]
       );
     } catch (err) {
+      console.error("Erro inesperado no cadastro:", err);
       Alert.alert("Erro", "Ocorreu um erro inesperado. Tente novamente.");
     } finally {
       setLoading(false);
@@ -123,11 +180,7 @@ export default function CadastrarScreen({ navigation }: Props) {
         style={styles.inner}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Botão voltar */}
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={COLORS.backArrow} />
         </TouchableOpacity>
 
@@ -136,28 +189,31 @@ export default function CadastrarScreen({ navigation }: Props) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Logo */}
           <View style={styles.logoWrap}>
             <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
           </View>
 
-          {/* Formulário */}
           <View style={styles.form}>
 
             <View style={styles.fieldWrap}>
               <Text style={styles.label}>Nome completo</Text>
-              <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="" placeholderTextColor={COLORS.placeholder} autoCapitalize="words" />
+              <TextInput style={styles.input} value={nome} onChangeText={setNome}
+                placeholder="" placeholderTextColor={COLORS.placeholder} autoCapitalize="words" />
             </View>
 
             <View style={styles.fieldWrap}>
               <Text style={styles.label}>E-mail</Text>
-              <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="" placeholderTextColor={COLORS.placeholder} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+              <TextInput style={styles.input} value={email} onChangeText={setEmail}
+                placeholder="" placeholderTextColor={COLORS.placeholder}
+                keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
             </View>
 
             <View style={styles.fieldWrap}>
               <Text style={styles.label}>Senha</Text>
               <View style={styles.inputRow}>
-                <TextInput style={[styles.input, { flex: 1, borderWidth: 0 }]} value={senha} onChangeText={setSenha} placeholder="" placeholderTextColor={COLORS.placeholder} secureTextEntry={!senhaVisible} autoCapitalize="none" />
+                <TextInput style={[styles.input, { flex: 1, borderWidth: 0 }]} value={senha}
+                  onChangeText={setSenha} placeholder="" placeholderTextColor={COLORS.placeholder}
+                  secureTextEntry={!senhaVisible} autoCapitalize="none" />
                 <TouchableOpacity style={styles.eyeBtn} onPress={() => setSenhaVisible(!senhaVisible)}>
                   <Ionicons name={senhaVisible ? "eye-outline" : "eye-off-outline"} size={18} color={COLORS.placeholder} />
                 </TouchableOpacity>
@@ -167,7 +223,9 @@ export default function CadastrarScreen({ navigation }: Props) {
             <View style={styles.fieldWrap}>
               <Text style={styles.label}>Confirmar senha</Text>
               <View style={styles.inputRow}>
-                <TextInput style={[styles.input, { flex: 1, borderWidth: 0 }]} value={confirmarSenha} onChangeText={setConfirmarSenha} placeholder="" placeholderTextColor={COLORS.placeholder} secureTextEntry={!confirmarVisible} autoCapitalize="none" />
+                <TextInput style={[styles.input, { flex: 1, borderWidth: 0 }]} value={confirmarSenha}
+                  onChangeText={setConfirmarSenha} placeholder="" placeholderTextColor={COLORS.placeholder}
+                  secureTextEntry={!confirmarVisible} autoCapitalize="none" />
                 <TouchableOpacity style={styles.eyeBtn} onPress={() => setConfirmarVisible(!confirmarVisible)}>
                   <Ionicons name={confirmarVisible ? "eye-outline" : "eye-off-outline"} size={18} color={COLORS.placeholder} />
                 </TouchableOpacity>
@@ -176,12 +234,19 @@ export default function CadastrarScreen({ navigation }: Props) {
 
             <View style={styles.fieldWrap}>
               <Text style={styles.label}>Data de Nascimento</Text>
-              <TextInput style={styles.input} value={dataNasc} onChangeText={setDataNasc} placeholder="DD/MM/AAAA" placeholderTextColor={COLORS.placeholder} keyboardType="numeric" maxLength={10} />
+              <TextInput
+                style={styles.input}
+                value={dataNasc}
+                onChangeText={(v) => setDataNasc(formatarData(v))}
+                placeholder="DD/MM/AAAA"
+                placeholderTextColor={COLORS.placeholder}
+                keyboardType="numeric"
+                maxLength={10}
+              />
             </View>
 
           </View>
 
-          {/* Botão Cadastrar */}
           <TouchableOpacity
             style={[styles.cadastrarBtn, loading && { opacity: 0.7 }]}
             activeOpacity={0.85}
@@ -194,11 +259,7 @@ export default function CadastrarScreen({ navigation }: Props) {
             }
           </TouchableOpacity>
 
-          {/* Link para login */}
-          <TouchableOpacity
-            style={styles.loginLink}
-            onPress={() => navigation.navigate("Login")}
-          >
+          <TouchableOpacity style={styles.loginLink} onPress={() => navigation.navigate("Login")}>
             <Text style={styles.loginLinkText}>
               Já tem conta? <Text style={styles.loginLinkBold}>Entrar</Text>
             </Text>

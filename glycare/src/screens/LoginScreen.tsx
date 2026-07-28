@@ -21,9 +21,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { supabase } from "../lib/supabase";
 
-// =========================================
-// CORES
-// =========================================
 const COLORS = {
   bg:          "#1E1B4B",
   input:       "#2D2A6E",
@@ -37,9 +34,6 @@ const COLORS = {
   white:       "#FFFFFF",
 };
 
-// =========================================
-// CONFIGURAÇÕES
-// =========================================
 const LOGO_URL = "https://snipboard.io/dGebyq.jpg";
 
 type Props = {
@@ -64,22 +58,40 @@ export default function LoginScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: senha,
       });
 
       if (error) {
-        Alert.alert("Erro ao entrar", "E-mail ou senha incorretos.");
+        // Mensagens de erro específicas e em português
+        if (error.message.includes("Invalid login credentials")) {
+          Alert.alert("Erro ao entrar", "E-mail ou senha incorretos.");
+        } else if (error.message.includes("Email not confirmed")) {
+          Alert.alert(
+            "E-mail não confirmado",
+            "Verifique sua caixa de entrada e confirme o e-mail antes de entrar."
+          );
+        } else if (error.message.includes("Too many requests")) {
+          Alert.alert("Muitas tentativas", "Aguarde alguns minutos antes de tentar novamente.");
+        } else {
+          Alert.alert("Erro ao entrar", error.message);
+        }
         return;
       }
 
-      // Login ok — vai para o app principal
+      if (!data.session) {
+        Alert.alert("Atenção", "Não foi possível iniciar sessão. Tente novamente.");
+        return;
+      }
+
+      // Login ok — reseta a navegação e vai direto para o app
       navigation.reset({
         index: 0,
         routes: [{ name: "MainApp" }],
       });
     } catch (err) {
+      console.error("Erro inesperado no login:", err);
       Alert.alert("Erro", "Ocorreu um erro inesperado. Tente novamente.");
     } finally {
       setLoading(false);
@@ -94,11 +106,7 @@ export default function LoginScreen({ navigation }: Props) {
         style={styles.inner}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Botão voltar */}
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={COLORS.backArrow} />
         </TouchableOpacity>
 
@@ -107,15 +115,12 @@ export default function LoginScreen({ navigation }: Props) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Logo */}
           <View style={styles.logoWrap}>
             <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
           </View>
 
-          {/* Formulário */}
           <View style={styles.form}>
 
-            {/* E-mail */}
             <View style={styles.fieldWrap}>
               <Text style={styles.label}>E-mail</Text>
               <TextInput
@@ -130,7 +135,6 @@ export default function LoginScreen({ navigation }: Props) {
               />
             </View>
 
-            {/* Senha */}
             <View style={styles.fieldWrap}>
               <Text style={styles.label}>Senha</Text>
               <View style={styles.inputRow}>
@@ -143,10 +147,7 @@ export default function LoginScreen({ navigation }: Props) {
                   secureTextEntry={!senhaVisible}
                   autoCapitalize="none"
                 />
-                <TouchableOpacity
-                  style={styles.eyeBtn}
-                  onPress={() => setSenhaVisible(!senhaVisible)}
-                >
+                <TouchableOpacity style={styles.eyeBtn} onPress={() => setSenhaVisible(!senhaVisible)}>
                   <Ionicons
                     name={senhaVisible ? "eye-outline" : "eye-off-outline"}
                     size={18}
@@ -158,7 +159,6 @@ export default function LoginScreen({ navigation }: Props) {
 
           </View>
 
-          {/* Botão Entrar */}
           <TouchableOpacity
             style={[styles.loginBtn, loading && { opacity: 0.7 }]}
             activeOpacity={0.85}
@@ -171,11 +171,7 @@ export default function LoginScreen({ navigation }: Props) {
             }
           </TouchableOpacity>
 
-          {/* Link para cadastro */}
-          <TouchableOpacity
-            style={styles.cadastroLink}
-            onPress={() => navigation.navigate("Cadastrar")}
-          >
+          <TouchableOpacity style={styles.cadastroLink} onPress={() => navigation.navigate("Cadastrar")}>
             <Text style={styles.cadastroLinkText}>
               Não tem conta? <Text style={styles.cadastroLinkBold}>Cadastrar</Text>
             </Text>
