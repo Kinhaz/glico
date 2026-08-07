@@ -13,6 +13,8 @@ import InicioScreen    from "../screens/InicioScreen";
 import LoginScreen     from "../screens/LoginScreen";
 import CadastrarScreen from "../screens/CadastrarScreen";
 import RelatoriosScreen from "../screens/RelatoriosScreen";
+import HomeScreen from "../screens/HomeScreen";
+import RegistrarScreen from "../screens/RegistrarScreen";
 
 // Placeholder temporário até criar as screens reais
 const Placeholder = (label: string) => () => (
@@ -94,8 +96,9 @@ export default function AppNavigator() {
 
   return (
     <Stack.Navigator
-      // Se já tiver sessão salva → vai direto para MainApp, senão → Inicio
-      initialRouteName={session ? "MainApp" : "Inicio"}
+      // Se já tiver sessão salva → vai direto para MainApp, senão → Inicio (login/cadastro)
+      // Pra testar a Home isolada: troque temporariamente para initialRouteName="Home"
+      initialRouteName={session ? "MainApp" : "Home"}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: "#1E1B4B" },
@@ -106,6 +109,8 @@ export default function AppNavigator() {
       <Stack.Screen name="Login"     component={LoginScreen} />
       <Stack.Screen name="Cadastrar" component={CadastrarScreen} />
       <Stack.Screen name="MainApp"   component={DrawerNavigator} />
+      <Stack.Screen name="Home"      component={HomeScreen} />
+      <Stack.Screen name="Registrar" component={RegistrarScreen} />
     </Stack.Navigator>
   );
 }
