@@ -32,6 +32,13 @@ const QUICK_ACTIONS: QuickAction[] = [
   { id: 'analise', label: 'Análise', icon: 'bar-chart-outline', tint: '#9F8FFF', tintSoft: 'rgba(159,143,255,0.16)' },
 ];
 
+// Mapeia cada ação rápida para o nome da rota que deve ser aberta ao tocar.
+// Ações sem entrada aqui não navegam automaticamente (apenas disparam onQuickAction).
+const QUICK_ACTION_ROUTES: Partial<Record<string, string>> = {
+  receitas: 'Receitas',
+  exercicios: 'Exercicios',
+};
+
 const MOODS = [
   { id: 'muito-mal', emoji: '😞', color: '#FF6B6B' },
   { id: 'mal', emoji: '😕', color: '#FF9F6B' },
@@ -86,6 +93,16 @@ export default function HomeScreen({
   const handleMoodSelect = (moodId: string) => {
     setSelectedMood(moodId);
     onMoodSelect?.(moodId);
+  };
+
+  // Navega automaticamente quando a ação rápida tem uma rota mapeada,
+  // e sempre repassa o clique para quem estiver ouvindo via onQuickAction.
+  const handleQuickAction = (actionId: string) => {
+    const routeName = QUICK_ACTION_ROUTES[actionId];
+    if (routeName) {
+      navigation?.navigate?.(routeName);
+    }
+    onQuickAction?.(actionId);
   };
 
   return (
@@ -189,7 +206,7 @@ export default function HomeScreen({
               key={action.id}
               activeOpacity={0.85}
               style={styles.actionCard}
-              onPress={() => onQuickAction?.(action.id)}
+              onPress={() => handleQuickAction(action.id)}
             >
               <View style={[styles.actionIconWrap, { backgroundColor: action.tintSoft }]}>
                 <Ionicons name={action.icon} size={22} color={action.tint} />

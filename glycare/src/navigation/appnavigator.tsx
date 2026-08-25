@@ -15,6 +15,9 @@ import CadastrarScreen from "../screens/CadastrarScreen";
 import RelatoriosScreen from "../screens/RelatoriosScreen";
 import HomeScreen from "../screens/HomeScreen";
 import RegistrarScreen from "../screens/RegistrarScreen";
+import RecipesScreen from "../screens/RecipesScreen";
+import ExercisesScreen from "../screens/ExercisesScreen";
+import RecipeDetailScreen from "../screens/RecipeDetailScreen";
 
 // Placeholder temporário até criar as screens reais
 const Placeholder = (label: string) => () => (
@@ -105,12 +108,15 @@ export default function AppNavigator() {
         animation: "slide_from_right",
       }}
     >
-      <Stack.Screen name="Inicio"    component={InicioScreen} />
-      <Stack.Screen name="Login"     component={LoginScreen} />
-      <Stack.Screen name="Cadastrar" component={CadastrarScreen} />
-      <Stack.Screen name="MainApp"   component={DrawerNavigator} />
-      <Stack.Screen name="Home"      component={HomeScreen} />
-      <Stack.Screen name="Registrar" component={RegistrarScreen} />
+      <Stack.Screen name="Inicio"       component={InicioScreen} />
+      <Stack.Screen name="Login"        component={LoginScreen} />
+      <Stack.Screen name="Cadastrar"    component={CadastrarScreen} />
+      <Stack.Screen name="MainApp"      component={DrawerNavigator} />
+      <Stack.Screen name="Home"         component={HomeScreen} />
+      <Stack.Screen name="Registrar"    component={RegistrarScreen} />
+      <Stack.Screen name="Receitas"     component={RecipesScreen} />
+      <Stack.Screen name="Exercicios"   component={ExercisesScreen} />
+      <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
     </Stack.Navigator>
   );
 }
