@@ -13,23 +13,14 @@ import { DMSans_400Regular, DMSans_500Medium } from "@expo-google-fonts/dm-sans"
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 
-// =========================================
-// CORES
-// =========================================
 const COLORS = {
-  bg:         "#1E1B4B",
-  bgCard:     "#2D2A6E",
-  btnPrimary: "#3730A3",
-  btnBorder:  "#3D3A7E",
-  text:       "#FFFFFF",
-  textMuted:  "#A5B4FC",
-  white:      "#FFFFFF",
+  bg:        "#1E1B4B",
+  bgCard:    "#2D2A6E",
+  btnBorder: "#3D3A7E",
+  white:     "#FFFFFF",
 };
 
-// =========================================
-// CONFIGURAÇÕES
-// =========================================
-const LOGO_URL = "https://snipboard.io/dGebyq.jpg";
+const LOGO_URL = "https://snipboard.io/dkoPZi.jpg";
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Inicio">;
@@ -45,11 +36,7 @@ export default function InicioScreen({ navigation }: Props) {
 
       {/* Logo card central */}
       <View style={styles.logoCard}>
-        <Image
-          source={{ uri: LOGO_URL }}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
       </View>
 
       {/* Botões */}
@@ -83,8 +70,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 48,
   },
-
-  // Logo card
   logoCard: {
     width: 160,
     height: 160,
@@ -93,16 +78,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logo: {
-    width: 110,
-    height: 90,
-  },
-
-  // Botões
-  btnGroup: {
-    width: "100%",
-    gap: 14,
-  },
+  logo: { width: 120, height: 100 },
+  btnGroup: { width: "100%", gap: 14 },
   btnOutline: {
     borderWidth: 1.5,
     borderColor: COLORS.btnBorder,
@@ -110,7 +87,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent",
   },
   btnOutlineText: {
     fontFamily: "DMSans_500Medium",
