@@ -9,8 +9,6 @@ import { RootStackParamList } from "../navigation/types";
 import { useFonts, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
 import { DMSans_400Regular, DMSans_500Medium } from "@expo-google-fonts/dm-sans";
 
-// ── Componentes internos ──────────────────────────────────────────────────────
-
 function ProgressBar({ progress }: { progress: number }) {
   return (
     <View style={pb.track}>
@@ -18,26 +16,18 @@ function ProgressBar({ progress }: { progress: number }) {
     </View>
   );
 }
-
 const pb = StyleSheet.create({
   track: { height: 6, backgroundColor: "#2D2A6E", borderRadius: 3, overflow: "hidden" },
   fill:  { height: "100%", backgroundColor: "#A5B4FC", borderRadius: 3 },
 });
 
-function OptionButton({
-  label, selected, onPress,
-}: { label: string; selected: boolean; onPress: () => void }) {
+function OptionButton({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      style={[ob.btn, selected && ob.btnSelected]}
-    >
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[ob.btn, selected && ob.btnSelected]}>
       <Text style={[ob.text, selected && ob.textSelected]}>{label}</Text>
     </TouchableOpacity>
   );
 }
-
 const ob = StyleSheet.create({
   btn:          { borderWidth: 1.5, borderColor: "#3A3A78", borderRadius: 14, padding: 16, marginBottom: 12 },
   btnSelected:  { borderColor: "#A5B4FC", backgroundColor: "rgba(165,180,252,0.12)" },
@@ -45,8 +35,9 @@ const ob = StyleSheet.create({
   textSelected: { color: "#FFFFFF", fontFamily: "DMSans_500Medium" },
 });
 
-// ── Perguntas ─────────────────────────────────────────────────────────────────
-
+// =========================================
+// PERGUNTAS — fácil de adicionar/remover
+// =========================================
 const PERGUNTAS = [
   { key: "tipo_diabetes",       question: "Qual tipo de diabetes você tem?",                              options: ["Tipo 1", "Tipo 2", "Diabetes gestacional", "Pré-diabetes ou não sei"] },
   { key: "desafio_principal",   question: "Qual é o seu principal desafio no controle do diabetes?",     options: ["Controlar a alimentação", "Manter a glicemia estável", "Fazer exercícios", "Lembrar dos remédios"] },
@@ -58,9 +49,10 @@ const PERGUNTAS = [
   { key: "sono",                question: "Como está a qualidade do seu sono?",                           options: ["Durmo bem", "Durmo mal às vezes", "Durmo mal com frequência", "Não sei avaliar"] },
   { key: "notificacoes",        question: "Você gostaria de receber lembretes do aplicativo?",            options: ["Sim, lembretes de glicemia", "Sim, lembretes de remédios", "Sim, ambos", "Prefiro não receber"] },
   { key: "objetivo",            question: "Qual é o seu maior objetivo com o aplicativo?",                options: ["Estabilizar minha glicemia", "Perder peso", "Ter mais controle na rotina", "Aprender mais sobre diabetes"] },
+  // ── Novas perguntas ──
+  { key: "genero",              question: "Qual é o seu gênero?",                                         options: ["Masculino", "Feminino", "Não binário"] },
+  { key: "tipo_sanguineo",      question: "Qual é o seu tipo sanguíneo?",                                 options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Não sei"] },
 ];
-
-// ── Screen ────────────────────────────────────────────────────────────────────
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Questionario">;
@@ -83,8 +75,6 @@ export default function QuestionarioScreen({ navigation, route }: Props) {
     setRespostas(novas);
 
     if (index === total - 1) {
-      // Última pergunta → vai para tela de resultado
-      // O cadastro no Supabase só é feito na ResultadoScreen
       navigation.navigate("Resultado", { respostas: novas, dadosCadastro });
     } else {
       setIndex(index + 1);
@@ -93,7 +83,6 @@ export default function QuestionarioScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header com progresso */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => (index === 0 ? navigation.goBack() : setIndex(index - 1))}
@@ -102,17 +91,14 @@ export default function QuestionarioScreen({ navigation, route }: Props) {
         >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-
         <View style={styles.progressWrap}>
           <Text style={styles.progressLabel}>{`Pergunta ${index + 1} de ${total}`}</Text>
           <ProgressBar progress={(index + 1) / total} />
         </View>
       </View>
 
-      {/* Conteúdo */}
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.question}>{pergunta.question}</Text>
-
         <View style={styles.options}>
           {pergunta.options.map((op) => (
             <OptionButton

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View, Text, StyleSheet, SafeAreaView,
   ScrollView, TouchableOpacity, ActivityIndicator, Alert,
@@ -11,12 +11,8 @@ import { DMSans_400Regular, DMSans_500Medium } from "@expo-google-fonts/dm-sans"
 import { supabase } from "../lib/supabase";
 
 const COLORS = {
-  bg:          "#1B1B45",
-  card:        "#26265C",
-  cardBorder:  "#3A3A78",
-  accent:      "#4DDFD8",
-  textPrimary: "#FFFFFF",
-  textSec:     "#B7B7DA",
+  bg: "#1B1B45", card: "#26265C", cardBorder: "#3A3A78",
+  accent: "#4DDFD8", textPrimary: "#FFFFFF", textSec: "#B7B7DA",
 };
 
 type Props = {
@@ -24,24 +20,21 @@ type Props = {
   route: RouteProp<RootStackParamList, "Resultado">;
 };
 
-// ── Gera recomendações a partir das respostas ─────────────────────────────────
 function buildRecomendacoes(r: Record<string, string>) {
   const recs: { title: string; description: string }[] = [];
 
   switch (r.tipo_diabetes) {
-    case "Tipo 1":      recs.push({ title: "Monitoramento intensivo",       description: "Lembretes de medição e contagem de carboidratos para ajustar a insulina." }); break;
-    case "Tipo 2":      recs.push({ title: "Controle de rotina",             description: "Foco em alimentação, exercícios e lembretes de medicação." }); break;
+    case "Tipo 1":               recs.push({ title: "Monitoramento intensivo",    description: "Lembretes de medição e contagem de carboidratos para ajustar a insulina." }); break;
+    case "Tipo 2":               recs.push({ title: "Controle de rotina",          description: "Foco em alimentação, exercícios e lembretes de medicação." }); break;
     case "Diabetes gestacional": recs.push({ title: "Acompanhamento da gestação", description: "Metas de glicemia e alimentação para essa fase." }); break;
-    default:            recs.push({ title: "Conteúdo educativo",             description: "Conteúdos educativos e lembretes para exames de acompanhamento." });
+    default:                     recs.push({ title: "Conteúdo educativo",          description: "Conteúdos educativos e lembretes para exames de acompanhamento." });
   }
-
   switch (r.desafio_principal) {
-    case "Controlar a alimentação":    recs.push({ title: "Diário alimentar",        description: "Registre refeições e receba sugestões saudáveis." }); break;
-    case "Manter a glicemia estável":  recs.push({ title: "Gráficos de glicemia",   description: "Evolução da glicemia com alertas fora da faixa ideal." }); break;
-    case "Fazer exercícios":           recs.push({ title: "Treinos adaptados",       description: "Atividades físicas seguras para quem tem diabetes." }); break;
-    case "Lembrar dos remédios":       recs.push({ title: "Alarmes de medicação",   description: "Notificações no horário certo para cada remédio." }); break;
+    case "Controlar a alimentação":   recs.push({ title: "Diário alimentar",      description: "Registre refeições e receba sugestões saudáveis." }); break;
+    case "Manter a glicemia estável": recs.push({ title: "Gráficos de glicemia", description: "Evolução da glicemia com alertas fora da faixa ideal." }); break;
+    case "Fazer exercícios":          recs.push({ title: "Treinos adaptados",     description: "Atividades físicas seguras para quem tem diabetes." }); break;
+    case "Lembrar dos remédios":      recs.push({ title: "Alarmes de medicação", description: "Notificações no horário certo para cada remédio." }); break;
   }
-
   if (r.frequencia_medicao === "Raramente ou nunca")
     recs.push({ title: "Lembretes de glicemia", description: "Lembretes para criar o hábito de medir." });
   if (r.alimentacao === "Preciso melhorar bastante" || r.alimentacao === "Não sei avaliar")
@@ -54,18 +47,15 @@ function buildRecomendacoes(r: Record<string, string>) {
     recs.push({ title: "Melhore seu sono", description: "Como o sono afeta a glicemia e hábitos para dormir melhor." });
   if (r.notificacoes && r.notificacoes !== "Prefiro não receber")
     recs.push({ title: "Notificações personalizadas", description: "Você vai receber lembretes no horário mais adequado." });
-
   switch (r.objetivo) {
-    case "Estabilizar minha glicemia": recs.push({ title: "Painel de glicemia",      description: "Mostra o quão estável está sua glicemia na semana." }); break;
-    case "Perder peso":                recs.push({ title: "Acompanhamento de peso",  description: "Cruza peso, alimentação e atividade para emagrecer com segurança." }); break;
-    case "Ter mais controle na rotina":recs.push({ title: "Rotina organizada",       description: "Agenda com medição, remédios, refeições e exercícios." }); break;
-    case "Aprender mais sobre diabetes":recs.push({ title: "Trilha de aprendizado", description: "Conteúdos curtos e confiáveis sobre a sua condição." }); break;
+    case "Estabilizar minha glicemia":   recs.push({ title: "Painel de glicemia",      description: "Mostra o quão estável está sua glicemia na semana." }); break;
+    case "Perder peso":                  recs.push({ title: "Acompanhamento de peso",  description: "Cruza peso, alimentação e atividade para emagrecer com segurança." }); break;
+    case "Ter mais controle na rotina":  recs.push({ title: "Rotina organizada",       description: "Agenda com medição, remédios, refeições e exercícios." }); break;
+    case "Aprender mais sobre diabetes": recs.push({ title: "Trilha de aprendizado",   description: "Conteúdos curtos e confiáveis sobre a sua condição." }); break;
   }
-
   return recs;
 }
 
-// ── Screen ────────────────────────────────────────────────────────────────────
 export default function ResultadoScreen({ navigation, route }: Props) {
   const { respostas, dadosCadastro } = route.params;
   const [salvando, setSalvando]      = useState(false);
@@ -74,27 +64,20 @@ export default function ResultadoScreen({ navigation, route }: Props) {
   const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_500Medium });
   if (!fontsLoaded) return null;
 
-  // ── Cria o usuário e salva tudo no Supabase ───────────────────────────
   const handleComecar = async () => {
     setSalvando(true);
     try {
       // 1. Cria conta no Supabase Auth
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email:    dadosCadastro.email,
+        email:   dadosCadastro.email,
         password: dadosCadastro.senha,
-        options:  { data: { nome_completo: dadosCadastro.nome, data_nascimento: dadosCadastro.dataNasc } },
+        options: { data: { nome_completo: dadosCadastro.nome, data_nascimento: dadosCadastro.dataNasc } },
       });
-
-      if (signUpError) {
-        Alert.alert("Erro ao criar conta", signUpError.message); return;
-      }
+      if (signUpError) { Alert.alert("Erro ao criar conta", signUpError.message); return; }
 
       const userId = data.user?.id;
-      if (!userId) {
-        Alert.alert("Erro", "Não foi possível obter o ID do usuário."); return;
-      }
+      if (!userId) { Alert.alert("Erro", "Não foi possível obter o ID do usuário."); return; }
 
-      // Garante sessão (caso "Confirm email" esteja ativo)
       if (!data.session) {
         const { error: loginErr } = await supabase.auth.signInWithPassword({
           email: dadosCadastro.email, password: dadosCadastro.senha,
@@ -106,22 +89,22 @@ export default function ResultadoScreen({ navigation, route }: Props) {
         }
       }
 
-      // 2. Salva perfil
-      const { error: perfilErr } = await supabase.from("perfis").insert({
+      // 2. Salva perfil — inclui gênero e tipo sanguíneo do questionário
+      await supabase.from("perfis").insert({
         id:              userId,
         nome_completo:   dadosCadastro.nome,
         email:           dadosCadastro.email,
         data_nascimento: dadosCadastro.dataNasc,
+        genero:          respostas.genero ?? null,
+        tipo_sanguineo:  respostas.tipo_sanguineo ?? null,
       });
-      if (perfilErr) { console.error("Perfil:", perfilErr); }
 
-      // 3. Salva respostas do questionário
-      const { error: qErr } = await supabase.from("questionarios").insert({
-        user_id:   userId,
-        respostas: respostas,
+      // 3. Salva todas as respostas do questionário (incluindo genero e tipo_sanguineo)
+      await supabase.from("questionarios").insert({
+        user_id:    userId,
+        respostas:  respostas,
         created_at: new Date().toISOString(),
       });
-      if (qErr) { console.error("Questionário:", qErr); }
 
       // 4. Vai para o app
       navigation.reset({ index: 0, routes: [{ name: "Home" }] });
@@ -133,19 +116,12 @@ export default function ResultadoScreen({ navigation, route }: Props) {
     }
   };
 
-  const handleReFazer = () => {
-    navigation.navigate("Questionario", { dadosCadastro });
-  };
-
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>{respostas.tipo_diabetes || "Diabetes"}</Text>
         <Text style={styles.title}>Suas recomendações personalizadas</Text>
-        <Text style={styles.subtitle}>
-          Com base nas suas respostas, preparamos estas recomendações para o seu dia a dia.
-        </Text>
-
+        <Text style={styles.subtitle}>Com base nas suas respostas, preparamos estas recomendações para o seu dia a dia.</Text>
         {recomendacoes.map((rec, i) => (
           <View key={i} style={styles.card}>
             <Text style={styles.cardTitle}>{rec.title}</Text>
@@ -153,18 +129,11 @@ export default function ResultadoScreen({ navigation, route }: Props) {
           </View>
         ))}
       </ScrollView>
-
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.primaryBtn, salvando && { opacity: 0.7 }]}
-          onPress={handleComecar} disabled={salvando}
-        >
-          {salvando
-            ? <ActivityIndicator color={COLORS.bg} />
-            : <Text style={styles.primaryBtnText}>Começar a usar o app</Text>
-          }
+        <TouchableOpacity style={[styles.primaryBtn, salvando && { opacity: 0.7 }]} onPress={handleComecar} disabled={salvando}>
+          {salvando ? <ActivityIndicator color={COLORS.bg} /> : <Text style={styles.primaryBtnText}>Começar a usar o app</Text>}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryBtn} onPress={handleReFazer} disabled={salvando}>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate("Questionario", { dadosCadastro })} disabled={salvando}>
           <Text style={styles.secondaryBtnText}>Refazer questionário</Text>
         </TouchableOpacity>
       </View>

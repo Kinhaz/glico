@@ -8,31 +8,28 @@ import { RootStackParamList, DrawerParamList } from "./types";
 import CustomDrawer from "../components/CustomDrawer";
 import { supabase } from "../lib/supabase";
 
-// ── Screens de autenticação / onboarding ──
 import InicioScreen       from "../screens/InicioScreen";
 import LoginScreen        from "../screens/LoginScreen";
 import CadastrarScreen    from "../screens/CadastrarScreen";
 import QuestionarioScreen from "../screens/QuestionarioScreen";
 import ResultadoScreen    from "../screens/ResultadoScreen";
-
-// ── Screens do app principal ──
 import HomeScreen         from "../screens/HomeScreen";
 import RelatoriosScreen   from "../screens/RelatoriosScreen";
 import RegistrarScreen    from "../screens/RegistrarScreen";
 import RecipesScreen      from "../screens/RecipesScreen";
 import ExercisesScreen    from "../screens/ExercisesScreen";
 import RecipeDetailScreen from "../screens/RecipeDetailScreen";
+import ConfiguracoesScreen from "../screens/ConfiguracoesScreen";
+import MonitorarScreen    from "../screens/MonitorarScreen";
+import PerfilScreen       from "../screens/PerfilScreen";
 
-// Placeholder para telas ainda não criadas
 const Placeholder = (label: string) => () => (
-  <View style={{ flex: 1, backgroundColor: "#1E1B4B", alignItems: "center", justifyContent: "center" }}>
+  <View style={{ flex: 1, backgroundColor: "#0B0A24", alignItems: "center", justifyContent: "center" }}>
     <Text style={{ color: "#A5B4FC", fontSize: 18 }}>{label}</Text>
   </View>
 );
 
-// =========================================
-// DRAWER — telas com menu lateral
-// =========================================
+// ── DRAWER ──
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
 function DrawerNavigator() {
@@ -56,21 +53,19 @@ function DrawerNavigator() {
         drawerStyle: { backgroundColor: "#1E1B4B", width: 260 },
       })}
     >
-      {/* "Início" no menu = HomeScreen (tela principal do app) */}
-      <Drawer.Screen name="Home"         component={HomeScreen}                options={{ title: "Início" }} />
-      <Drawer.Screen name="Perfil"         component={Placeholder("Perfil")}     options={{ title: "Perfil" }} />
+      {/* Home = tela principal, aparece como "Início" no menu */}
+      <Drawer.Screen name="Home"           component={HomeScreen}          options={{ title: "Início",         headerShown: false }} />
+      <Drawer.Screen name="Perfil"         component={PerfilScreen}        options={{ title: "Perfil" }} />
       <Drawer.Screen name="EspacoFamiliar" component={Placeholder("Espaço Familiar")} options={{ title: "Espaço Familiar" }} />
-      <Drawer.Screen name="Monitorar"      component={Placeholder("Monitorar")}  options={{ title: "Monitorar" }} />
-      <Drawer.Screen name="Relatorios"     component={RelatoriosScreen}          options={{ title: "Relatórios" }} />
+      <Drawer.Screen name="Monitorar"      component={MonitorarScreen}     options={{ title: "Monitorar" }} />
+      <Drawer.Screen name="Relatorios"     component={RelatoriosScreen}    options={{ title: "Relatórios" }} />
       <Drawer.Screen name="EvIMC"          component={Placeholder("Evolução do IMC")} options={{ title: "Evolução do IMC" }} />
-      <Drawer.Screen name="Configuracoes"  component={Placeholder("Configurações")} options={{ title: "Configurações" }} />
+      <Drawer.Screen name="Configuracoes"  component={ConfiguracoesScreen} options={{ title: "Configurações" }} />
     </Drawer.Navigator>
   );
 }
 
-// =========================================
-// STACK — roteamento principal
-// =========================================
+// ── STACK ──
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
@@ -78,7 +73,6 @@ export default function AppNavigator() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verifica sessão salva → pula a tela de login se já logado
     supabase.auth.getSession()
       .then(({ data: { session } }) => setSession(session))
       .catch((err) => console.log("Erro ao buscar sessão:", err))
@@ -101,7 +95,6 @@ export default function AppNavigator() {
 
   return (
     <Stack.Navigator
-      // Usuário logado → Home | Não logado → Inicio
       initialRouteName={session ? "Home" : "Inicio"}
       screenOptions={{
         headerShown: false,
@@ -109,17 +102,12 @@ export default function AppNavigator() {
         animation: "slide_from_right",
       }}
     >
-      {/* ── Auth / Onboarding ── */}
       <Stack.Screen name="Inicio"       component={InicioScreen} />
       <Stack.Screen name="Login"        component={LoginScreen} />
       <Stack.Screen name="Cadastrar"    component={CadastrarScreen} />
       <Stack.Screen name="Questionario" component={QuestionarioScreen} />
       <Stack.Screen name="Resultado"    component={ResultadoScreen} />
-
-      {/* ── App principal (com menu lateral) ── */}
-      <Stack.Screen name="Home"      component={DrawerNavigator} />
-
-      {/* ── Telas acessadas de dentro do app ── */}
+      <Stack.Screen name="Home"         component={DrawerNavigator} />
       <Stack.Screen name="Registrar"    component={RegistrarScreen} />
       <Stack.Screen name="Receitas"     component={RecipesScreen} />
       <Stack.Screen name="Exercicios"   component={ExercisesScreen} />
