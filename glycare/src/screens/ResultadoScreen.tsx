@@ -22,7 +22,6 @@ type Props = {
 
 function buildRecomendacoes(r: Record<string, string>) {
   const recs: { title: string; description: string }[] = [];
-
   switch (r.tipo_diabetes) {
     case "Tipo 1":               recs.push({ title: "Monitoramento intensivo",    description: "Lembretes de medição e contagem de carboidratos para ajustar a insulina." }); break;
     case "Tipo 2":               recs.push({ title: "Controle de rotina",          description: "Foco em alimentação, exercícios e lembretes de medicação." }); break;
@@ -67,49 +66,79 @@ export default function ResultadoScreen({ navigation, route }: Props) {
   const handleComecar = async () => {
     setSalvando(true);
     try {
-      // 1. Cria conta no Supabase Auth
+      // ── 1. Cria a conta no Supabase Auth ──────────────────────────────
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email:   dadosCadastro.email,
+        email:    dadosCadastro.email,
         password: dadosCadastro.senha,
-        options: { data: { nome_completo: dadosCadastro.nome, data_nascimento: dadosCadastro.dataNasc } },
+        options: {
+          data: {
+            nome_completo:   dadosCadastro.nome,
+            data_nascimento: dadosCadastro.dataNasc,
+          },
+          // Sem emailRedirectTo → não exige confirmação de e-mail
+        },
       });
-      if (signUpError) { Alert.alert("Erro ao criar conta", signUpError.message); return; }
 
-      const userId = data.user?.id;
-      if (!userId) { Alert.alert("Erro", "Não foi possível obter o ID do usuário."); return; }
-
-      if (!data.session) {
-        const { error: loginErr } = await supabase.auth.signInWithPassword({
-          email: dadosCadastro.email, password: dadosCadastro.senha,
-        });
-        if (loginErr) {
-          Alert.alert("Cadastro criado!", "Confirme seu e-mail para ativar a conta.",
-            [{ text: "OK", onPress: () => navigation.navigate("Login") }]);
-          return;
-        }
+      if (signUpError) {
+        Alert.alert("Erro ao criar conta", signUpError.message);
+        return;
       }
 
-      // 2. Salva perfil — inclui gênero e tipo sanguíneo do questionário
-      await supabase.from("perfis").insert({
+      // ── 2. Faz login imediatamente (garante sessão ativa) ─────────────
+      // Necessário quando "confirm email" está desativado no Supabase
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email:    dadosCadastro.email,
+        password: dadosCadastro.senha,
+      });
+
+      if (loginError || !loginData.session) {
+        Alert.alert("Erro ao entrar", "Conta criada! Tente fazer login.");
+        navigation.navigate("Login");
+        return;
+      }
+
+      const userId = loginData.user.id;
+
+      // ── 3. Salva o perfil completo ────────────────────────────────────
+      const { error: perfilError } = await supabase.from("perfis").upsert({
         id:              userId,
         nome_completo:   dadosCadastro.nome,
         email:           dadosCadastro.email,
         data_nascimento: dadosCadastro.dataNasc,
-        genero:          respostas.genero ?? null,
-        tipo_sanguineo:  respostas.tipo_sanguineo ?? null,
+        genero:          respostas.genero          ?? null,
+        tipo_sanguineo:  respostas.tipo_sanguineo  ?? null,
+        tipo_diabetes:   respostas.tipo_diabetes   ?? null,
+        updated_at:      new Date().toISOString(),
       });
 
-      // 3. Salva todas as respostas do questionário (incluindo genero e tipo_sanguineo)
-      await supabase.from("questionarios").insert({
+      if (perfilError) {
+        console.error("Erro ao salvar perfil:", perfilError.message);
+      }
+
+      // ── 4. Salva todas as respostas do questionário ───────────────────
+      const { error: qError } = await supabase.from("questionarios").insert({
         user_id:    userId,
-        respostas:  respostas,
+        respostas:  respostas,            // JSON com todas as 12 respostas
         created_at: new Date().toISOString(),
       });
 
-      // 4. Vai para o app
+      if (qError) {
+        console.error("Erro ao salvar questionário:", qError.message);
+      }
+
+      // ── 5. Cria registro inicial de sequência ─────────────────────────
+      await supabase.from("sequencia_autocuidado").upsert({
+        user_id:     userId,
+        dias_streak: 0,
+        ultima_data: new Date().toISOString().split("T")[0],
+        updated_at:  new Date().toISOString(),
+      });
+
+      // ── 6. Navega para o app ──────────────────────────────────────────
       navigation.reset({ index: 0, routes: [{ name: "Home" }] });
 
     } catch (err) {
+      console.error("Erro inesperado:", err);
       Alert.alert("Erro", "Ocorreu um erro inesperado. Tente novamente.");
     } finally {
       setSalvando(false);
@@ -121,7 +150,9 @@ export default function ResultadoScreen({ navigation, route }: Props) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>{respostas.tipo_diabetes || "Diabetes"}</Text>
         <Text style={styles.title}>Suas recomendações personalizadas</Text>
-        <Text style={styles.subtitle}>Com base nas suas respostas, preparamos estas recomendações para o seu dia a dia.</Text>
+        <Text style={styles.subtitle}>
+          Com base nas suas respostas, preparamos estas recomendações para o seu dia a dia.
+        </Text>
         {recomendacoes.map((rec, i) => (
           <View key={i} style={styles.card}>
             <Text style={styles.cardTitle}>{rec.title}</Text>
@@ -129,11 +160,23 @@ export default function ResultadoScreen({ navigation, route }: Props) {
           </View>
         ))}
       </ScrollView>
+
       <View style={styles.footer}>
-        <TouchableOpacity style={[styles.primaryBtn, salvando && { opacity: 0.7 }]} onPress={handleComecar} disabled={salvando}>
-          {salvando ? <ActivityIndicator color={COLORS.bg} /> : <Text style={styles.primaryBtnText}>Começar a usar o app</Text>}
+        <TouchableOpacity
+          style={[styles.primaryBtn, salvando && { opacity: 0.7 }]}
+          onPress={handleComecar}
+          disabled={salvando}
+        >
+          {salvando
+            ? <ActivityIndicator color={COLORS.bg} />
+            : <Text style={styles.primaryBtnText}>Começar a usar o app</Text>
+          }
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate("Questionario", { dadosCadastro })} disabled={salvando}>
+        <TouchableOpacity
+          style={styles.secondaryBtn}
+          onPress={() => navigation.navigate("Questionario", { dadosCadastro })}
+          disabled={salvando}
+        >
           <Text style={styles.secondaryBtnText}>Refazer questionário</Text>
         </TouchableOpacity>
       </View>

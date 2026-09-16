@@ -9,7 +9,6 @@ export type RootStackParamList = {
   Questionario:  { dadosCadastro: DadosCadastro };
   Resultado:     { respostas: Record<string, string>; dadosCadastro: DadosCadastro };
   Home:          undefined;   // ← entrada no DrawerNavigator (era MainApp)
-  Registrar:     undefined;
   Receitas:      undefined;
   Exercicios:    undefined;
   RecipeDetail:  undefined;
@@ -26,8 +25,9 @@ export type DrawerParamList = {
   Home:           undefined;
   Perfil:         undefined;
   EspacoFamiliar: undefined;
+  Registrar:      undefined;
   Monitorar:      undefined;
   Relatorios:     undefined;
   EvIMC:          undefined;
-  Configuracoes:  undefined;   // ← tela de configurações adicionada
+  Configuracoes:  undefined;
 };

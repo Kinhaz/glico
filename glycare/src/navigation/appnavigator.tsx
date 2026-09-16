@@ -57,6 +57,7 @@ function DrawerNavigator() {
       <Drawer.Screen name="Home"           component={HomeScreen}          options={{ title: "Início",         headerShown: false }} />
       <Drawer.Screen name="Perfil"         component={PerfilScreen}        options={{ title: "Perfil" }} />
       <Drawer.Screen name="EspacoFamiliar" component={Placeholder("Espaço Familiar")} options={{ title: "Espaço Familiar" }} />
+      <Drawer.Screen name="Registrar"      component={RegistrarScreen}     options={{ title: "Registrar", headerShown: false }} />
       <Drawer.Screen name="Monitorar"      component={MonitorarScreen}     options={{ title: "Monitorar" }} />
       <Drawer.Screen name="Relatorios"     component={RelatoriosScreen}    options={{ title: "Relatórios" }} />
       <Drawer.Screen name="EvIMC"          component={Placeholder("Evolução do IMC")} options={{ title: "Evolução do IMC" }} />
@@ -108,7 +109,6 @@ export default function AppNavigator() {
       <Stack.Screen name="Questionario" component={QuestionarioScreen} />
       <Stack.Screen name="Resultado"    component={ResultadoScreen} />
       <Stack.Screen name="Home"         component={DrawerNavigator} />
-      <Stack.Screen name="Registrar"    component={RegistrarScreen} />
       <Stack.Screen name="Receitas"     component={RecipesScreen} />
       <Stack.Screen name="Exercicios"   component={ExercisesScreen} />
       <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
