@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   scrollContent:   { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
   header:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   brand:           { fontSize: 16, fontWeight: '700', color: '#F5F3FF', letterSpacing: 0.5 },
-  pageTitle:       { fontFamily: undefined, fontSize: 26, fontWeight: '800', color: '#F5F3FF', marginBottom: 4 },
+  pageTitle:       { fontSize: 26, fontWeight: '800', color: '#F5F3FF', marginBottom: 4 },
   pageSub:         { fontSize: 14, color: '#A5A3C7', marginBottom: 20 },
   glicemiaCard:    { backgroundColor: '#13122E', borderRadius: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', padding: 20, marginBottom: 16 },
   glicemiaCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

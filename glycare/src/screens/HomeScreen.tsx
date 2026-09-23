@@ -20,7 +20,10 @@ const QUICK_ACTIONS: QuickAction[] = [
   { id: 'analise',    label: 'Análise',    icon: 'bar-chart-outline',  tint: '#9F8FFF', tintSoft: 'rgba(159,143,255,0.16)' },
 ];
 const QUICK_ACTION_ROUTES: Partial<Record<string, string>> = {
-  receitas: 'Receitas', exercicios: 'Exercicios',
+  receitas:   'Receitas',
+  exercicios: 'Exercicios',
+  saude:      'Saude',
+  analise:    'Analise',
 };
 const MOODS = [
   { id: 'muito-mal', emoji: '😞', color: '#FF6B6B' },
@@ -106,10 +109,10 @@ export default function HomeScreen({ navigation }: { navigation?: any }) {
   const handlePressIn  = () => Animated.spring(pressAnim, { toValue: 0.96, useNativeDriver: true, speed: 40 }).start();
   const handlePressOut = () => Animated.spring(pressAnim, { toValue: 1,    useNativeDriver: true, speed: 40 }).start();
 
-  const handleQuickAction = (actionId: string) => {
-    const routeName = QUICK_ACTION_ROUTES[actionId];
-    if (routeName) navigation?.navigate?.(routeName);
-  };
+const handleQuickAction = (actionId: string) => {
+  const routeName = QUICK_ACTION_ROUTES[actionId];
+  if (routeName) navigation?.getParent()?.navigate(routeName);
+};
 
   if (carregando) {
     return (

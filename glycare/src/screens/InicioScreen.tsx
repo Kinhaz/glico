@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   btnOutlineText: {
-    fontFamily: "DMSans_500Medium",
     fontSize: 16,
     color: COLORS.white,
     letterSpacing: 0.3,

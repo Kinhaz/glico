@@ -77,8 +77,8 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 const infoStyles = StyleSheet.create({
   row:     { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 12 },
   iconWrap:{ width: 30, height: 30, borderRadius: 8, backgroundColor: C.accentBg, alignItems: "center", justifyContent: "center" },
-  label:   { fontFamily: "DMSans_400Regular", fontSize: 13, color: C.muted, flex: 1 },
-  value:   { fontFamily: "DMSans_500Medium", fontSize: 13, color: C.text },
+  label:   { fontSize: 13, color: C.muted, flex: 1 },
+  value:   { fontSize: 13, color: C.text },
 });
 
 function QuickLink({ icon, label, color, onPress }: { icon: string; label: string; color: string; onPress: () => void }) {
@@ -92,7 +92,7 @@ function QuickLink({ icon, label, color, onPress }: { icon: string; label: strin
 }
 const qlStyles = StyleSheet.create({
   btn:   { flexDirection: "row", alignItems: "center", backgroundColor: C.surface, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, gap: 10, marginBottom: 8 },
-  label: { fontFamily: "DMSans_500Medium", fontSize: 13 },
+  label: { fontSize: 13 },
 });
 
 // ── Screen ─────────────────────────────────────────────────────────────────
@@ -240,33 +240,33 @@ const styles = StyleSheet.create({
   container:   { flex: 1, backgroundColor: C.bg },
   scroll:      { paddingHorizontal: 20, paddingTop: 16 },
   pageHeader:  { marginBottom: 20 },
-  pageTitle:   { fontFamily: "Fraunces_700Bold", fontSize: 28, color: C.text, marginBottom: 4 },
-  pageSub:     { fontFamily: "DMSans_400Regular", fontSize: 14, color: C.muted },
+  pageTitle:   { fontSize: 28, color: C.text, marginBottom: 4 },
+  pageSub:     { fontSize: 14, color: C.muted },
 
   // Identity card
   identityCard:{ backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 16, marginBottom: 20 },
   avatarRow:   { flexDirection: "row", alignItems: "flex-start", gap: 14 },
   avatar:      { width: 56, height: 56, borderRadius: 28, backgroundColor: C.accent, alignItems: "center", justifyContent: "center" },
-  avatarText:  { fontFamily: "Fraunces_700Bold", fontSize: 20, color: "#FFF" },
-  userName:    { fontFamily: "Fraunces_700Bold", fontSize: 17, color: C.text, marginBottom: 6 },
+  avatarText:  { fontSize: 20, color: "#FFF" },
+  userName:    { fontSize: 17, color: C.text, marginBottom: 6 },
   infoLine:    { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
-  infoLineText:{ fontFamily: "DMSans_400Regular", fontSize: 12, color: C.muted },
+  infoLineText:{ fontSize: 12, color: C.muted },
   editBtn:     { flexDirection: "row", alignItems: "center", backgroundColor: C.accentBg, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, gap: 5 },
-  editBtnText: { fontFamily: "DMSans_500Medium", fontSize: 12, color: C.accent },
+  editBtnText: { fontSize: 12, color: C.accent },
 
   // Sections
   section:      { marginBottom: 20 },
-  sectionTitle: { fontFamily: "DMSans_500Medium", fontSize: 12, color: C.muted, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 10, paddingLeft: 4 },
+  sectionTitle: { fontSize: 12, color: C.muted, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 10, paddingLeft: 4 },
   card:         { backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, paddingHorizontal: 16 },
   divider:      { height: 1, backgroundColor: C.border },
 
   // Diagnóstico
   diagRow:   { flexDirection: "row", gap: 12 },
   diagCard:  { flex: 1, backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, padding: 16 },
-  diagLabel: { fontFamily: "DMSans_400Regular", fontSize: 11, color: C.muted, marginBottom: 8 },
-  diagValue: { fontFamily: "Fraunces_700Bold", fontSize: 18 },
+  diagLabel: { fontSize: 11, color: C.muted, marginBottom: 8 },
+  diagValue: { fontSize: 18 },
 
   // Logout
   logoutBtn:  { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,107,107,0.1)", borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,107,107,0.25)", paddingVertical: 14 },
-  logoutText: { fontFamily: "DMSans_500Medium", fontSize: 14, color: C.red },
+  logoutText: { fontSize: 14, color: C.red },
 });

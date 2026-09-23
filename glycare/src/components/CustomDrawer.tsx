@@ -32,7 +32,7 @@ const MENU_ITEMS = [
 const LOGO_URL = "https://snipboard.io/dkoPZi.jpg";
 
 export default function CustomDrawer(props: DrawerContentComponentProps) {
-  const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_500Medium });
+  const [fontsLoaded] = useFonts({ });
   if (!fontsLoaded) return null;
 
   const currentRoute = props.state.routeNames[props.state.index] ?? "";

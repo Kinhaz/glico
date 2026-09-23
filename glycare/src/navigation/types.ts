@@ -8,17 +8,16 @@ export type RootStackParamList = {
   Cadastrar:     undefined;
   Questionario:  { dadosCadastro: DadosCadastro };
   Resultado:     { respostas: Record<string, string>; dadosCadastro: DadosCadastro };
-  Home:          undefined;   // ← entrada no DrawerNavigator (era MainApp)
+  Home:          undefined;
   Receitas:      undefined;
   Exercicios:    undefined;
   RecipeDetail:  undefined;
+  Saude:         undefined;
+  Analise:       undefined;
 };
 
 export interface DadosCadastro {
-  nome:     string;
-  email:    string;
-  senha:    string;
-  dataNasc: string;
+  nome: string; email: string; senha: string; dataNasc: string;
 }
 
 export type DrawerParamList = {
