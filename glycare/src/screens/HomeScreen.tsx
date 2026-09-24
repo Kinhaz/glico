@@ -1,29 +1,35 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  Animated, Dimensions, ScrollView, StyleSheet,
+  Dimensions, ScrollView, StyleSheet, Animated,
   Text, TouchableOpacity, View, ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { supabase } from '../lib/supabase';
 
-type QuickAction = {
-  id: string; label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  tint: string; tintSoft: string;
+// ── Paleta unificada com ConfiguracoesScreen ──
+const C = {
+  bg:      "#0B0A24",
+  surface: "#13122E",
+  border:  "rgba(255,255,255,0.08)",
+  accent:  "#7C5CFF",
+  text:    "#F5F3FF",
+  muted:   "#A5A3C7",
+  orange:  "#FF9F6B",
+  green:   "#4FD1A5",
+  pink:    "#FF7597",
+  yellow:  "#FFD66B",
 };
-const QUICK_ACTIONS: QuickAction[] = [
-  { id: 'receitas',   label: 'Receitas',   icon: 'restaurant-outline', tint: '#FFB86B', tintSoft: 'rgba(255,184,107,0.14)' },
-  { id: 'exercicios', label: 'Exercícios', icon: 'walk-outline',       tint: '#34D6B4', tintSoft: 'rgba(52,214,180,0.14)'  },
-  { id: 'saude',      label: 'Saúde',      icon: 'water-outline',      tint: '#FF7597', tintSoft: 'rgba(255,117,151,0.14)' },
-  { id: 'analise',    label: 'Análise',    icon: 'bar-chart-outline',  tint: '#9F8FFF', tintSoft: 'rgba(159,143,255,0.16)' },
+const A = "Arial";
+
+const QUICK_ACTIONS = [
+  { id: 'receitas',   label: 'Receitas',   icon: 'restaurant-outline' as const, tint: '#FFB86B', tintSoft: 'rgba(255,184,107,0.14)' },
+  { id: 'exercicios', label: 'Exercícios', icon: 'walk-outline'       as const, tint: '#34D6B4', tintSoft: 'rgba(52,214,180,0.14)'  },
+  { id: 'saude',      label: 'Saúde',      icon: 'water-outline'      as const, tint: '#FF7597', tintSoft: 'rgba(255,117,151,0.14)' },
+  { id: 'analise',    label: 'Análise',    icon: 'bar-chart-outline'  as const, tint: '#9F8FFF', tintSoft: 'rgba(159,143,255,0.16)' },
 ];
-const QUICK_ACTION_ROUTES: Partial<Record<string, string>> = {
-  receitas:   'Receitas',
-  exercicios: 'Exercicios',
-  saude:      'Saude',
-  analise:    'Analise',
+const QUICK_ACTION_ROUTES: Record<string, string> = {
+  receitas: 'Receitas', exercicios: 'Exercicios', saude: 'Saude', analise: 'Analise',
 };
 const MOODS = [
   { id: 'muito-mal', emoji: '😞', color: '#FF6B6B' },
@@ -33,53 +39,32 @@ const MOODS = [
   { id: 'muito-bem', emoji: '😄', color: '#4FD1A5' },
 ];
 
-const RING_SIZE = 132;
+const RING_SIZE = 120;
 const RING_STROKE = 10;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 const { width } = Dimensions.get('window');
-const SIDE_PADDING = 24;
-const CARD_GAP = 14;
-const CARD_WIDTH = (width - SIDE_PADDING * 2 - CARD_GAP) / 2;
+const PAD = 20;
+const CARD_W = (width - PAD * 2 - 12) / 2;
 
 export default function HomeScreen({ navigation }: { navigation?: any }) {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [primeiroNome, setPrimeiroNome] = useState('');
   const [dayStreak,    setDayStreak]    = useState(0);
-  const [monthGoal]                     = useState(30);
   const [carregando,   setCarregando]   = useState(true);
   const pressAnim = useRef(new Animated.Value(1)).current;
 
-  // ── Busca dados reais do Supabase ──────────────────────────────────────
   useEffect(() => {
     async function carregar() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-
-        // Nome do perfil
-        const { data: perfil } = await supabase
-          .from('perfis')
-          .select('nome_completo')
-          .eq('id', user.id)
-          .single();
-
-        if (perfil?.nome_completo) {
-          setPrimeiroNome(perfil.nome_completo.split(' ')[0]);
-        }
-
-        // Sequência de autocuidado
-        const { data: seq } = await supabase
-          .from('sequencia_autocuidado')
-          .select('dias_streak')
-          .eq('user_id', user.id)
-          .single();
-
+        const { data: perfil } = await supabase.from('perfis').select('nome_completo').eq('id', user.id).single();
+        if (perfil?.nome_completo) setPrimeiroNome(perfil.nome_completo.split(' ')[0]);
+        const { data: seq } = await supabase.from('sequencia_autocuidado').select('dias_streak').eq('user_id', user.id).single();
         if (seq) setDayStreak(seq.dias_streak ?? 0);
-
-        // Salva humor ao selecionar
       } catch (err) {
-        console.error('Erro ao carregar home:', err);
+        console.error('Erro home:', err);
       } finally {
         setCarregando(false);
       }
@@ -92,181 +77,155 @@ export default function HomeScreen({ navigation }: { navigation?: any }) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      await supabase.from('registros_diarios').insert({
-        user_id: user.id,
-        tipo: 'humor',
-        dados: { humor: moodId, data: new Date().toISOString() },
-      });
-    } catch (err) {
-      console.error('Erro ao salvar humor:', err);
-    }
+      await supabase.from('registros_diarios').insert({ user_id: user.id, tipo: 'humor', dados: { humor: moodId, data: new Date().toISOString() } });
+    } catch (err) { console.error('Erro humor:', err); }
   };
 
-  const progress = Math.min(dayStreak / monthGoal, 1);
-  const strokeDashoffset = RING_CIRCUMFERENCE * (1 - progress);
-  const daysLeft = Math.max(monthGoal - dayStreak, 0);
+  const handleQuickAction = (actionId: string) => {
+    const r = QUICK_ACTION_ROUTES[actionId];
+    if (r) navigation?.getParent()?.navigate(r);
+  };
 
-  const handlePressIn  = () => Animated.spring(pressAnim, { toValue: 0.96, useNativeDriver: true, speed: 40 }).start();
-  const handlePressOut = () => Animated.spring(pressAnim, { toValue: 1,    useNativeDriver: true, speed: 40 }).start();
+  const progress = Math.min(dayStreak / 30, 1);
+  const strokeOffset = RING_CIRCUMFERENCE * (1 - progress);
+  const daysLeft = Math.max(30 - dayStreak, 0);
 
-const handleQuickAction = (actionId: string) => {
-  const routeName = QUICK_ACTION_ROUTES[actionId];
-  if (routeName) navigation?.getParent()?.navigate(routeName);
-};
+  const onPressIn  = () => Animated.spring(pressAnim, { toValue: 0.96, useNativeDriver: true, speed: 40 }).start();
+  const onPressOut = () => Animated.spring(pressAnim, { toValue: 1,    useNativeDriver: true, speed: 40 }).start();
 
-  if (carregando) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#0B0A24', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color="#A5B4FC" />
-      </View>
-    );
-  }
+  if (carregando) return (
+    <View style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator color={C.accent} />
+    </View>
+  );
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#181545', '#100E33', '#0B0A24']} style={StyleSheet.absoluteFill} />
-      <View style={styles.glowTop}  pointerEvents="none" />
-      <View style={styles.glowBottom} pointerEvents="none" />
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Header próprio da Home */}
         <View style={styles.header}>
-          <TouchableOpacity hitSlop={10} onPress={() => navigation?.openDrawer?.()}>
-            <Ionicons name="menu" size={26} color="#F5F3FF" />
+          <TouchableOpacity onPress={() => navigation?.openDrawer?.()}>
+            <Ionicons name="menu" size={26} color={C.text} />
           </TouchableOpacity>
           <Text style={styles.brand}>GlyCare</Text>
-          <TouchableOpacity hitSlop={10} style={styles.bellButton}>
-            <Ionicons name="notifications-outline" size={20} color="#F5F3FF" />
+          <TouchableOpacity style={styles.bellBtn}>
+            <Ionicons name="notifications-outline" size={22} color={C.text} />
             <View style={styles.bellDot} />
           </TouchableOpacity>
         </View>
 
-        {/* Saudação com nome real */}
-        <View style={styles.greetingBlock}>
-          <Text style={styles.greeting}>Olá, {primeiroNome || 'Usuário'} 👋</Text>
-          <Text style={styles.subtitle}>Vamos cuidar da sua saúde hoje</Text>
-        </View>
+        {/* Saudação */}
+        <Text style={styles.greeting}>Olá, {primeiroNome || 'Usuário'} 👋</Text>
+        <Text style={styles.greetingSub}>Vamos cuidar da sua saúde hoje</Text>
 
-        {/* Card sequência de autocuidado */}
+        {/* Card sequência */}
         <View style={styles.heroCard}>
-          <LinearGradient colors={['#2B2670', '#1C1856']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-          <View style={styles.heroContent}>
-            <View style={styles.ringWrap}>
-              <Svg width={RING_SIZE} height={RING_SIZE}>
-                <Circle cx={RING_SIZE/2} cy={RING_SIZE/2} r={RING_RADIUS} stroke="rgba(255,255,255,0.08)" strokeWidth={RING_STROKE} fill="none" />
-                <Circle cx={RING_SIZE/2} cy={RING_SIZE/2} r={RING_RADIUS} stroke="#FF8A65" strokeWidth={RING_STROKE} strokeLinecap="round" fill="none"
-                  strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
-                  strokeDashoffset={strokeDashoffset}
-                  rotation={-90} origin={`${RING_SIZE/2}, ${RING_SIZE/2}`} />
-              </Svg>
-              <View style={styles.ringLabel}>
-                <Text style={styles.ringDay}>{dayStreak}</Text>
-                <Text style={styles.ringDayCaption}>dia{dayStreak === 1 ? '' : 's'}</Text>
-              </View>
+          <View style={styles.ringWrap}>
+            <Svg width={RING_SIZE} height={RING_SIZE}>
+              <Circle cx={RING_SIZE/2} cy={RING_SIZE/2} r={RING_RADIUS} stroke={C.border} strokeWidth={RING_STROKE} fill="none" />
+              <Circle cx={RING_SIZE/2} cy={RING_SIZE/2} r={RING_RADIUS} stroke="#FF8A65" strokeWidth={RING_STROKE}
+                strokeLinecap="round" fill="none"
+                strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
+                strokeDashoffset={strokeOffset} rotation={-90} origin={`${RING_SIZE/2}, ${RING_SIZE/2}`} />
+            </Svg>
+            <View style={styles.ringLabel}>
+              <Text style={styles.ringDay}>{dayStreak}</Text>
+              <Text style={styles.ringCaption}>dias</Text>
             </View>
-            <View style={styles.heroTextBlock}>
-              <Text style={styles.heroEyebrow}>SEQUÊNCIA DE AUTOCUIDADO</Text>
-              <Text style={styles.heroTitle}>Você está indo bem!</Text>
-              <Text style={styles.heroSubtitle}>
-                {daysLeft > 0
-                  ? `Faltam ${daysLeft} dias para fechar o mês em cheio`
-                  : 'Você completou o mês em cheio!'}
-              </Text>
-              <Animated.View style={{ transform: [{ scale: pressAnim }], alignSelf: 'flex-start' }}>
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPressIn={handlePressIn} onPressOut={handlePressOut}
-                  onPress={() => navigation?.navigate?.('Registrar')}
-                  style={styles.registerButton}
-                >
-                  <Ionicons name="add-circle" size={18} color="#181545" style={{ marginRight: 6 }} />
-                  <Text style={styles.registerButtonText}>Registrar hoje</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
+          </View>
+          <View style={styles.heroText}>
+            <Text style={styles.heroEye}>SEQUÊNCIA DE AUTOCUIDADO</Text>
+            <Text style={styles.heroTitle}>Você está indo bem!</Text>
+            <Text style={styles.heroSub}>{daysLeft > 0 ? `Faltam ${daysLeft} dias para fechar o mês em cheio` : 'Você completou o mês!'}</Text>
+            <Animated.View style={{ transform: [{ scale: pressAnim }], alignSelf: 'flex-start' }}>
+              <TouchableOpacity activeOpacity={0.9} onPressIn={onPressIn} onPressOut={onPressOut}
+                onPress={() => navigation?.getParent()?.navigate('Registrar')}
+                style={styles.regBtn}
+              >
+                <Ionicons name="add-circle" size={16} color={C.bg} style={{ marginRight: 6 }} />
+                <Text style={styles.regBtnText}>Registrar hoje</Text>
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </View>
 
         {/* Ações rápidas */}
         <Text style={styles.sectionLabel}>AÇÕES RÁPIDAS</Text>
         <View style={styles.grid}>
-          {QUICK_ACTIONS.map((action) => (
-            <TouchableOpacity key={action.id} activeOpacity={0.85} style={styles.actionCard} onPress={() => handleQuickAction(action.id)}>
-              <View style={[styles.actionIconWrap, { backgroundColor: action.tintSoft }]}>
-                <Ionicons name={action.icon} size={22} color={action.tint} />
+          {QUICK_ACTIONS.map(a => (
+            <TouchableOpacity key={a.id} style={styles.actionCard} activeOpacity={0.85} onPress={() => handleQuickAction(a.id)}>
+              <View style={[styles.actionIcon, { backgroundColor: a.tintSoft }]}>
+                <Ionicons name={a.icon} size={22} color={a.tint} />
               </View>
-              <Text style={styles.actionLabel}>{action.label}</Text>
+              <Text style={styles.actionLabel}>{a.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Check-in de humor */}
+        {/* Humor */}
         <Text style={styles.sectionLabel}>COMO VOCÊ ESTÁ SE SENTINDO?</Text>
         <View style={styles.moodCard}>
-          <Text style={styles.moodQuestion}>Registre seu humor de hoje</Text>
+          <Text style={styles.moodQ}>Registre seu humor de hoje</Text>
           <View style={styles.moodRow}>
-            {MOODS.map((mood) => {
-              const isSelected = selectedMood === mood.id;
+            {MOODS.map(m => {
+              const sel = selectedMood === m.id;
               return (
-                <TouchableOpacity key={mood.id} onPress={() => handleMoodSelect(mood.id)} activeOpacity={0.8}
-                  style={[styles.moodButton, isSelected && { backgroundColor: `${mood.color}26`, borderColor: mood.color }]}>
-                  <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+                <TouchableOpacity key={m.id} onPress={() => handleMoodSelect(m.id)} activeOpacity={0.8}
+                  style={[styles.moodBtn, sel && { backgroundColor: `${m.color}26`, borderColor: m.color }]}>
+                  <Text style={{ fontSize: 22 }}>{m.emoji}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
         </View>
 
-        {/* Dica do dia */}
+        {/* Dica */}
         <View style={styles.tipCard}>
-          <View style={styles.tipIconWrap}><Ionicons name="bulb-outline" size={18} color="#FFD66B" /></View>
+          <View style={styles.tipIcon}><Ionicons name="bulb-outline" size={18} color={C.yellow} /></View>
           <View style={{ flex: 1 }}>
             <Text style={styles.tipTitle}>Dica do dia</Text>
             <Text style={styles.tipText}>Beber água antes das refeições ajuda a manter a glicemia mais estável ao longo do dia.</Text>
           </View>
         </View>
+
+        <View style={{ height: 32 }} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0B0A24' },
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: SIDE_PADDING, paddingTop: 16, paddingBottom: 40 },
-  glowTop:    { position: 'absolute', top: -80, right: -60, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(124,92,255,0.18)' },
-  glowBottom: { position: 'absolute', bottom: -100, left: -80, width: 260, height: 260, borderRadius: 130, backgroundColor: 'rgba(52,214,180,0.10)' },
-  header:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 },
-  brand:    { fontSize: 16, fontWeight: '700', color: '#F5F3FF', letterSpacing: 0.5 },
-  bellButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
-  bellDot:  { position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FF7597', borderWidth: 1.5, borderColor: '#0B0A24' },
-  greetingBlock: { marginBottom: 20 },
-  greeting: { fontSize: 26, fontWeight: '800', color: '#F5F3FF', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#A5A3C7', fontWeight: '500' },
-  heroCard: { borderRadius: 28, overflow: 'hidden', marginBottom: 28, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
-  heroContent: { flexDirection: 'row', alignItems: 'center', padding: 20 },
-  ringWrap:  { width: RING_SIZE, height: RING_SIZE, alignItems: 'center', justifyContent: 'center', marginRight: 18 },
-  ringLabel: { position: 'absolute', alignItems: 'center' },
-  ringDay:   { fontSize: 32, fontWeight: '800', color: '#F5F3FF', lineHeight: 34 },
-  ringDayCaption: { fontSize: 12, color: '#A5A3C7', fontWeight: '600', marginTop: -2 },
-  heroTextBlock:  { flex: 1 },
-  heroEyebrow:    { fontSize: 10, fontWeight: '700', color: '#A897FF', letterSpacing: 0.8, marginBottom: 6 },
-  heroTitle:      { fontSize: 17, fontWeight: '700', color: '#F5F3FF', marginBottom: 4 },
-  heroSubtitle:   { fontSize: 12.5, color: '#A5A3C7', lineHeight: 17, marginBottom: 12 },
-  registerButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F5F3FF', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14 },
-  registerButtonText: { fontSize: 13, fontWeight: '700', color: '#181545' },
-  sectionLabel: { fontSize: 11.5, fontWeight: '700', color: '#7A78A3', letterSpacing: 0.9, marginBottom: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 28 },
-  actionCard: { width: CARD_WIDTH, backgroundColor: 'rgba(255,255,255,0.045)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: 16, marginBottom: CARD_GAP },
-  actionIconWrap: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  actionLabel: { fontSize: 14, fontWeight: '600', color: '#F5F3FF' },
-  moodCard: { backgroundColor: 'rgba(255,255,255,0.045)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', borderRadius: 22, padding: 18, marginBottom: 20 },
-  moodQuestion: { fontSize: 14, fontWeight: '600', color: '#F5F3FF', marginBottom: 14 },
-  moodRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  moodButton: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.05)' },
-  moodEmoji: { fontSize: 22 },
-  tipCard: { flexDirection: 'row', backgroundColor: 'rgba(255,214,107,0.08)', borderWidth: 1, borderColor: 'rgba(255,214,107,0.18)', borderRadius: 18, padding: 16 },
-  tipIconWrap: { width: 34, height: 34, borderRadius: 12, backgroundColor: 'rgba(255,214,107,0.16)', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  tipTitle: { fontSize: 13, fontWeight: '700', color: '#F5F3FF', marginBottom: 3 },
-  tipText:  { fontSize: 12.5, color: '#C7C5E0', lineHeight: 17 },
+  root:        { flex: 1, backgroundColor: C.bg },
+  scroll:      { paddingHorizontal: PAD, paddingTop: 16, paddingBottom: 32 },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+  brand:       { fontFamily: A, fontWeight: '700', fontSize: 17, color: C.text },
+  bellBtn:     { width: 38, height: 38, borderRadius: 19, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
+  bellDot:     { position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.pink, borderWidth: 1.5, borderColor: C.bg },
+  greeting:    { fontFamily: A, fontWeight: '800', fontSize: 24, color: C.text, marginBottom: 4 },
+  greetingSub: { fontFamily: A, fontSize: 14, color: C.muted, marginBottom: 20 },
+  heroCard:    { backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 28 },
+  ringWrap:    { width: RING_SIZE, height: RING_SIZE, alignItems: 'center', justifyContent: 'center' },
+  ringLabel:   { position: 'absolute', alignItems: 'center' },
+  ringDay:     { fontFamily: A, fontWeight: '800', fontSize: 28, color: C.text },
+  ringCaption: { fontFamily: A, fontSize: 12, color: C.muted },
+  heroText:    { flex: 1 },
+  heroEye:     { fontFamily: A, fontWeight: '700', fontSize: 10, color: C.accent, letterSpacing: 0.8, marginBottom: 6 },
+  heroTitle:   { fontFamily: A, fontWeight: '700', fontSize: 16, color: C.text, marginBottom: 4 },
+  heroSub:     { fontFamily: A, fontSize: 12, color: C.muted, lineHeight: 17, marginBottom: 12 },
+  regBtn:      { flexDirection: 'row', alignItems: 'center', backgroundColor: C.text, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 14 },
+  regBtnText:  { fontFamily: A, fontWeight: '700', fontSize: 13, color: C.bg },
+  sectionLabel:{ fontFamily: A, fontWeight: '700', fontSize: 11, color: C.muted, letterSpacing: 0.9, marginBottom: 12 },
+  grid:        { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 28 },
+  actionCard:  { width: CARD_W, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 16, marginBottom: 12 },
+  actionIcon:  { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  actionLabel: { fontFamily: A, fontWeight: '600', fontSize: 14, color: C.text },
+  moodCard:    { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 18, marginBottom: 16 },
+  moodQ:       { fontFamily: A, fontWeight: '600', fontSize: 14, color: C.text, marginBottom: 14 },
+  moodRow:     { flexDirection: 'row', justifyContent: 'space-between' },
+  moodBtn:     { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.05)' },
+  tipCard:     { flexDirection: 'row', backgroundColor: 'rgba(255,214,107,0.08)', borderWidth: 1, borderColor: 'rgba(255,214,107,0.18)', borderRadius: 16, padding: 14 },
+  tipIcon:     { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,214,107,0.15)', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  tipTitle:    { fontFamily: A, fontWeight: '700', fontSize: 13, color: C.text, marginBottom: 3 },
+  tipText:     { fontFamily: A, fontSize: 12, color: C.muted, lineHeight: 17 },
 });

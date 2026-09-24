@@ -14,6 +14,7 @@ export type RootStackParamList = {
   RecipeDetail:  undefined;
   Saude:         undefined;
   Analise:       undefined;
+  Registrar:     undefined;   // ← saiu do Drawer, virou Stack
 };
 
 export interface DadosCadastro {
@@ -24,9 +25,9 @@ export type DrawerParamList = {
   Home:           undefined;
   Perfil:         undefined;
   EspacoFamiliar: undefined;
-  Registrar:      undefined;
   Monitorar:      undefined;
   Relatorios:     undefined;
   EvIMC:          undefined;
   Configuracoes:  undefined;
+  // Registrar removido do Drawer
 };
