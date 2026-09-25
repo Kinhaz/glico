@@ -5,14 +5,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 
 const A = "Arial";
-const COLORS = {
-  bg:       "#0B0A24",
-  surface:  "#13122E",
-  active:   "#A5B4FC",
-  inactive: "#6B68A8",
-  divider:  "rgba(255,255,255,0.08)",
-  red:      "#FF6B6B",
-};
+const C = { bg: "#0B0A24", surface: "#13122E", active: "#A5B4FC", inactive: "#6B68A8", divider: "rgba(255,255,255,0.08)", red: "#FF6B6B", gcOne: "#4FD1A5" };
+const LOGO_URL = "https://snipboard.io/uzH3yl.jpg";
 
 const MENU_ITEMS = [
   { label: "Início",          route: "Home",          icon: "home-outline"        },
@@ -23,8 +17,6 @@ const MENU_ITEMS = [
   { label: "Evolução do IMC", route: "EvIMC",          icon: "trending-up-outline" },
   { label: "Configurações",   route: "Configuracoes",  icon: "settings-outline"    },
 ];
-
-const LOGO_URL = "https://snipboard.io/uzH3yl.jpg";
 
 export default function CustomDrawer(props: DrawerContentComponentProps) {
   const currentRoute = props.state.routeNames[props.state.index] ?? "";
@@ -45,24 +37,36 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
           {MENU_ITEMS.map((item) => {
             const isActive = currentRoute === item.route;
             return (
-              <TouchableOpacity
-                key={item.route}
-                style={[styles.menuItem, isActive && styles.menuItemActive]}
-                activeOpacity={0.75}
-                onPress={() => props.navigation.navigate(item.route)}
-              >
-                <Ionicons name={item.icon as any} size={20} color={isActive ? COLORS.active : COLORS.inactive} />
+              <TouchableOpacity key={item.route} style={[styles.menuItem, isActive && styles.menuItemActive]} activeOpacity={0.75} onPress={() => props.navigation.navigate(item.route)}>
+                <Ionicons name={item.icon as any} size={20} color={isActive ? C.active : C.inactive} />
                 <Text style={[styles.menuLabel, isActive && styles.menuLabelActive]}>{item.label}</Text>
               </TouchableOpacity>
             );
           })}
+
+          {/* GlyCare One — item especial */}
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={[styles.menuItem, styles.gcOneItem, currentRoute === "GlycareOne" && styles.gcOneActive]}
+            activeOpacity={0.75}
+            onPress={() => props.navigation.navigate("GlycareOne")}
+          >
+            <Ionicons name="hardware-chip-outline" size={20} color={C.gcOne} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.menuLabel, { color: C.gcOne, fontWeight: "700" }]}>GlyCare One</Text>
+              <Text style={styles.gcOneSub}>Conectar dispositivo</Text>
+            </View>
+            <View style={styles.gcOneBadge}>
+              <Text style={styles.gcOneBadgeText}>NOVO</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </DrawerContentScrollView>
       <View style={styles.footer}>
         <View style={styles.divider} />
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.75} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color={COLORS.red} />
-          <Text style={[styles.menuLabel, { color: COLORS.red }]}>Sair</Text>
+          <Ionicons name="log-out-outline" size={20} color={C.red} />
+          <Text style={[styles.menuLabel, { color: C.red }]}>Sair</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -70,15 +74,20 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: COLORS.bg },
+  container:      { flex: 1, backgroundColor: C.bg },
   scrollContent:  { flexGrow: 1, paddingTop: 0 },
   header:         { paddingHorizontal: 20, paddingTop: 48, paddingBottom: 20 },
   logo:           { width: 120, height: 48 },
-  divider:        { height: 1, backgroundColor: COLORS.divider, marginHorizontal: 20, marginVertical: 8 },
+  divider:        { height: 1, backgroundColor: C.divider, marginHorizontal: 20, marginVertical: 8 },
   menuList:       { paddingHorizontal: 12, paddingTop: 8, gap: 4 },
   menuItem:       { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 13, paddingHorizontal: 12, borderRadius: 12 },
-  menuItemActive: { backgroundColor: COLORS.surface },
-  menuLabel:      { fontFamily: A, fontSize: 15, color: COLORS.inactive },
-  menuLabelActive:{ fontFamily: A, fontWeight: "600", color: COLORS.active },
+  menuItemActive: { backgroundColor: C.surface },
+  menuLabel:      { fontFamily: A, fontSize: 15, color: C.inactive, flex: 1 },
+  menuLabelActive:{ fontFamily: A, fontWeight: "600", color: C.active },
+  gcOneItem:      { borderRadius: 12, backgroundColor: "rgba(79,209,165,0.06)", borderWidth: 1, borderColor: "rgba(79,209,165,0.2)" },
+  gcOneActive:    { backgroundColor: "rgba(79,209,165,0.12)" },
+  gcOneSub:       { fontFamily: A, fontSize: 11, color: "rgba(79,209,165,0.6)", marginTop: 1 },
+  gcOneBadge:     { backgroundColor: "rgba(79,209,165,0.2)", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  gcOneBadgeText: { fontFamily: A, fontSize: 9, fontWeight: "700", color: "#4FD1A5" },
   footer:         { paddingHorizontal: 12, paddingBottom: 32 },
 });

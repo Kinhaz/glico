@@ -1,7 +1,3 @@
-// =========================================
-// GlyCare — rotas do app
-// =========================================
-
 export type RootStackParamList = {
   Inicio:        undefined;
   Login:         undefined;
@@ -14,7 +10,8 @@ export type RootStackParamList = {
   RecipeDetail:  undefined;
   Saude:         undefined;
   Analise:       undefined;
-  Registrar:     undefined;   // ← saiu do Drawer, virou Stack
+  Registrar:     undefined;
+  GlycareOne:    undefined;
 };
 
 export interface DadosCadastro {
@@ -29,5 +26,5 @@ export type DrawerParamList = {
   Relatorios:     undefined;
   EvIMC:          undefined;
   Configuracoes:  undefined;
-  // Registrar removido do Drawer
+  GlycareOne:     undefined;
 };
