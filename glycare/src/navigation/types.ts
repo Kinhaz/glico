@@ -1,21 +1,30 @@
-// =========================================
-// GlyCare — rotas do app
-// =========================================
-
 export type RootStackParamList = {
-  Inicio:        undefined;
-  Login:         undefined;
-  Cadastrar:     undefined;
-  Questionario:  { dadosCadastro: DadosCadastro };
-  Resultado:     { respostas: Record<string, string>; dadosCadastro: DadosCadastro };
-  Home:          undefined;
-  Receitas:      undefined;
-  Exercicios:    undefined;
-  RecipeDetail:  undefined;
-  Saude:         undefined;
-  Analise:       undefined;
-  Registrar:     undefined;   // ← saiu do Drawer, virou Stack
-  FamiliarDetalhes: { familiarId: string; };
+  Inicio: undefined;
+  Login: undefined;
+  Cadastrar: undefined;
+  Questionario: { dadosCadastro: DadosCadastro };
+  Resultado: {
+    respostas: Record<string, string>;
+    dadosCadastro: DadosCadastro;
+  };
+
+  Home: undefined;
+
+  Receitas: undefined;
+  Exercicios: undefined;
+  RecipeDetail: undefined;
+  Saude: undefined;
+  Analise: undefined;
+
+  Registrar: undefined;
+
+  AdicionarFamiliar: undefined;
+  ConviteEnviado: undefined;
+  FamiliarDetalhes: {
+    familiarId: string;
+  };
+
+  GlycareOne: undefined;
 };
 
 export interface DadosCadastro {
@@ -30,5 +39,5 @@ export type DrawerParamList = {
   Relatorios:     undefined;
   EvIMC:          undefined;
   Configuracoes:  undefined;
-  // Registrar removido do Drawer
+  GlycareOne:     undefined;
 };
