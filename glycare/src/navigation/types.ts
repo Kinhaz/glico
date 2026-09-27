@@ -15,6 +15,7 @@ export type RootStackParamList = {
   Saude:         undefined;
   Analise:       undefined;
   Registrar:     undefined;   // ← saiu do Drawer, virou Stack
+  FamiliarDetalhes: { familiarId: string; };
 };
 
 export interface DadosCadastro {

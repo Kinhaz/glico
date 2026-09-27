@@ -26,6 +26,9 @@ import EvIMCScreen          from "../screens/EvIMCScreen";
 import EspacoFamiliarScreen from "../screens/EspacoFamiliarScreen";
 import SaudeScreen          from "../screens/SaudeScreen";
 import AnaliseScreen        from "../screens/AnaliseScreen";
+import AdicionarFamiliarScreen from "../screens/AdicionarFamiliarScreen";
+import ConviteEnviadoScreen from "../screens/ConviteEnviadoScreen";
+import FamiliarDetalhesScreen from "../screens/FamiliarDetalhesScreen";
 
 // ── Cores do app ──
 const BG    = "#0B0A24";
@@ -116,6 +119,9 @@ export default function AppNavigator() {
       <Stack.Screen name="Receitas"     component={RecipesScreen} />
       <Stack.Screen name="Exercicios"   component={ExercisesScreen} />
       <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
+      <Stack.Screen name="AdicionarFamiliar" component={AdicionarFamiliarScreen} />
+      <Stack.Screen name="ConviteEnviado" component={ConviteEnviadoScreen} />
+      <Stack.Screen name="FamiliarDetalhes" component={FamiliarDetalhesScreen} />
     </Stack.Navigator>
   );
 }

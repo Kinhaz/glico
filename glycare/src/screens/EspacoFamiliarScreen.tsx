@@ -1,329 +1,288 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Polyline, Circle, Line as SvgLine } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
+import {
+  buscarConvites,
+  aceitarConvite,
+  recusarConvite,
+} from "../services/convitesService";
 
 const A = "Arial";
+
 const C = {
-  bg: "#0B0A24", surface: "#13122E", border: "rgba(255,255,255,0.08)",
-  accent: "#7C5CFF", green: "#4FD1A5", orange: "#FF9F6B",
-  red: "#FF6B6B", blue: "#60A5FA", text: "#F5F3FF", muted: "#A5A3C7",
+  bg: "#0B0A24",
+  surface: "#13122E",
+  border: "rgba(255,255,255,0.08)",
+  accent: "#7C5CFF",
+  green: "#4FD1A5",
+  red: "#FF6B6B",
+  text: "#F5F3FF",
+  muted: "#A5A3C7",
   yellow: "#FFD66B",
 };
-
-const CHART_W = 260;
-const CHART_H = 80;
-const GL_MIN = 80;
-const GL_MAX = 220;
-
-function toY(v: number) {
-  return CHART_H - ((Math.min(Math.max(v, GL_MIN), GL_MAX) - GL_MIN) / (GL_MAX - GL_MIN)) * CHART_H;
-}
-
-function glColor(v: number) {
-  if (v < 70)  return C.red;
-  if (v > 180) return C.orange;
-  return C.green;
-}
 
 interface Familiar {
   id: string;
   nome: string;
-  glicemia: number | null;
-  medicacoes: { total: number; tomadas: number };
-  pressao: string | null;
-  ultimaAtualizacao: string;
-  leituras7d: number[];
-  alertas: string[];
-  proximaConsulta: { data: string; hora: string; medico: string } | null;
-  timeline: { hora: string; descricao: string; status: "ok" | "pendente" | "alerta"; valor?: string }[];
-}
-
-function formatHora(iso: string) {
-  const d = new Date(iso);
-  return `${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}`;
+  relacao: string;
+  status: "ativo" | "pendente" | "recusado";
+  email?: string | null;
 }
 
 export default function EspacoFamiliarScreen({ navigation }: { navigation?: any }) {
   const [familiares, setFamiliares] = useState<Familiar[]>([]);
-  const [selected,   setSelected]   = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => { carregar(); }, []);
+  useFocusEffect(
+    useCallback(() => {
+      carregarFamiliares();
+    }, [])
+  );
 
-  async function carregar() {
+  async function carregarFamiliares() {
     setCarregando(true);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
-      // Busca vínculos familiares
-      const { data: vinculos } = await supabase
-        .from("vinculos_familiares")
-        .select("familiar_id, perfis(nome_completo)")
-        .eq("user_id", user.id);
-
-      if (!vinculos || vinculos.length === 0) {
+      if (!user) {
         setFamiliares([]);
         return;
       }
 
-      const lista: Familiar[] = await Promise.all(vinculos.map(async (v: any) => {
-        const fid = v.familiar_id;
-        const nome = v.perfis?.nome_completo ?? "Familiar";
+      const { data: vinculos, error } = await supabase
+        .from("vinculos_familiares")
+        .select("familiar_id, perfis(nome_completo)")
+        .eq("user_id", user.id);
 
-        // Última glicemia
-        const { data: ultGL } = await supabase
-          .from("leituras_glicemia")
-          .select("valor, medido_em")
-          .eq("user_id", fid)
-          .order("medido_em", { ascending: false })
-          .limit(1).single();
+      if (error) {
+        console.error("Erro ao buscar vínculos familiares:", error);
+      }
 
-        // Leituras últimos 7 dias para o gráfico
-        const inicio7d = new Date(); inicio7d.setDate(inicio7d.getDate() - 7);
-        const { data: gl7d } = await supabase
-          .from("leituras_glicemia")
-          .select("valor, medido_em")
-          .eq("user_id", fid)
-          .gte("medido_em", inicio7d.toISOString())
-          .order("medido_em", { ascending: true });
-
-        const leituras7d = (gl7d ?? []).map((l: any) => l.valor);
-
-        // Registros do dia
-        const hoje = new Date();
-        const inicioDia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).toISOString();
-        const { data: registros } = await supabase
-          .from("registros_diarios")
-          .select("tipo, dados, registrado_em")
-          .eq("user_id", fid)
-          .gte("registrado_em", inicioDia)
-          .order("registrado_em", { ascending: true });
-
-        const medTotal  = (registros ?? []).filter((r: any) => r.tipo === "medicacao").length;
-        const medTomadas = medTotal; // simplificado
-
-        // Timeline do dia
-        const timeline = (registros ?? []).map((r: any) => ({
-          hora: formatHora(r.registrado_em),
-          descricao: r.tipo === "glicemia" ? "Glicemia registrada"
-            : r.tipo === "alimentacao" ? "Refeição registrada"
-            : r.tipo === "medicacao"   ? "Medicação tomada"
-            : r.tipo,
-          status: "ok" as const,
-          valor: r.dados?.valor ? `${r.dados.valor} mg/dL` : r.dados?.descricao ?? undefined,
-        }));
-
-        // Alerta simples
-        const alertas: string[] = [];
-        if (leituras7d.filter(v => v > 180).length >= 2)
-          alertas.push(`${nome.split(" ")[0]} teve glicemias acima da meta nos últimos 7 dias. Fique atento à alimentação, hidratação e medicações.`);
-
-        // Próxima consulta (tabela consultas)
-        const { data: consulta } = await supabase
-          .from("consultas")
-          .select("data_hora, medico, especialidade")
-          .eq("user_id", fid)
-          .gte("data_hora", new Date().toISOString())
-          .order("data_hora", { ascending: true })
-          .limit(1).single();
-
-        let proximaConsulta = null;
-        if (consulta) {
-          const d = new Date(consulta.data_hora);
-          proximaConsulta = {
-            data: `${d.getDate()} de ${["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"][d.getMonth()]} de ${d.getFullYear()}`,
-            hora: `${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}`,
-            medico: `${consulta.medico} – ${consulta.especialidade}`,
-          };
-        }
-
-        return {
-          id: fid, nome,
-          glicemia: ultGL?.valor ?? null,
-          medicacoes: { total: 3, tomadas: Math.min(medTomadas, 3) },
-          pressao: null,
-          ultimaAtualizacao: ultGL?.medido_em ?? new Date().toISOString(),
-          leituras7d, alertas, proximaConsulta, timeline,
-        };
+      const familiaresAtivos: Familiar[] = (vinculos || []).map((v: any) => ({
+        id: v.familiar_id,
+        nome: v.perfis?.nome_completo ?? "Familiar",
+        relacao: "Familiar",
+        status: "ativo",
       }));
 
-      setFamiliares(lista);
-      if (lista.length > 0) setSelected(lista[0].id);
+      // Identificador temporário usado pelo serviço de convites.
+      const convites = await buscarConvites("paciente-demo");
+
+      const convitesFamiliares: Familiar[] = convites.map((convite) => ({
+        id: convite.id,
+        nome: convite.nome,
+        relacao: convite.relacao,
+        status:
+          convite.status === "aceito"
+            ? "ativo"
+            : convite.status === "recusado"
+            ? "recusado"
+            : "pendente",
+        email: convite.email,
+      }));
+
+      setFamiliares([...familiaresAtivos, ...convitesFamiliares]);
     } catch (err) {
-      console.error("Erro EspacoFamiliar:", err);
+      console.error("Erro Espaço Familiar:", err);
+      setFamiliares([]);
     } finally {
       setCarregando(false);
     }
   }
 
-  const familiar = familiares.find(f => f.id === selected) ?? null;
-  const primeiroNome = familiar?.nome?.split(" ")[0] ?? "";
+  function adicionarFamiliar() {
+    navigation?.navigate("AdicionarFamiliar");
+  }
 
-  const chartPoints = familiar?.leituras7d && familiar.leituras7d.length >= 2
-    ? familiar.leituras7d.map((v, i) => {
-        const x = (i / (familiar.leituras7d.length - 1)) * CHART_W;
-        return `${x},${toY(v)}`;
-      }).join(" ")
-    : null;
+  async function responderConvite(
+    familiar: Familiar,
+    status: "aceito" | "recusado"
+  ) {
+    try {
+      if (status === "aceito") {
+        await aceitarConvite(familiar.id);
+      } else {
+        await recusarConvite(familiar.id);
+      }
+
+      await carregarFamiliares();
+    } catch (error) {
+      console.error("Erro ao responder convite:", error);
+    }
+  }
+
+  function abrirFamiliar(familiar: Familiar) {
+    navigation?.getParent()?.navigate("FamiliarDetalhes", { familiarId: familiar.id });
+  }
+
+  function renderAvatar(nome: string, tamanho: "normal" | "grande" = "normal") {
+    const inicial = nome?.trim()?.charAt(0)?.toUpperCase() || "?";
+
+    return (
+      <View style={[styles.avatar, tamanho === "grande" && styles.avatarGrande]}>
+        <Text style={[styles.avatarText, tamanho === "grande" && styles.avatarTextGrande]}>
+          {inicial}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-
-        {/* Header */}
         <View style={styles.pageHeader}>
           <Text style={styles.pageTitle}>Espaço Familiar</Text>
-          <Text style={styles.pageSub}>Acompanhem juntos a saúde de quem você ama</Text>
+          <Text style={styles.pageSub}>Compartilhe sua jornada com quem você ama.</Text>
         </View>
 
         {carregando ? (
-          <ActivityIndicator color={C.accent} style={{ marginTop: 40 }} />
+          <ActivityIndicator color={C.accent} size="small" style={styles.loading} />
         ) : familiares.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="people-outline" size={40} color={C.muted} />
+            <View style={styles.emptyIcon}>
+              <Ionicons name="people-outline" size={34} color={C.accent} />
+            </View>
             <Text style={styles.emptyTitle}>Nenhum familiar vinculado</Text>
-            <Text style={styles.emptySub}>Adicione um familiar para acompanhar sua saúde.</Text>
-            <TouchableOpacity style={styles.addBtn}>
-              <Text style={styles.addBtnText}>+ Adicionar familiar</Text>
+            <Text style={styles.emptySub}>
+              Adicione um familiar ou cuidador para acompanhar sua evolução.
+            </Text>
+            <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={adicionarFamiliar}>
+              <Ionicons name="add" size={20} color="#FFFFFF" />
+              <Text style={styles.addButtonText}>Adicionar familiar ou cuidador</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            {/* Seletor de familiar */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-              {familiares.map(f => (
-                <TouchableOpacity key={f.id} onPress={() => setSelected(f.id)}
-                  style={[styles.familiarChip, selected === f.id && styles.familiarChipActive]}>
-                  <View style={styles.familiarAvatar}>
-                    <Text style={styles.familiarAvatarText}>{f.nome[0]}</Text>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryIcon}>
+                <Ionicons name="people" size={22} color={C.accent} />
+              </View>
+              <View style={styles.summaryContent}>
+                <Text style={styles.summaryNumber}>
+                  {familiares.filter((f) => f.status === "ativo").length}
+                </Text>
+                <Text style={styles.summaryText}>
+                  {familiares.filter((f) => f.status === "ativo").length === 1
+                    ? "pessoa acompanhando sua evolução"
+                    : "pessoas acompanhando sua evolução"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Quem te acompanha</Text>
+
+              {familiares.map((familiar) => (
+                <TouchableOpacity
+                  key={familiar.id}
+                  style={styles.personCard}
+                  activeOpacity={0.75}
+                  onPress={() => {
+                    if (familiar.status === "ativo") {
+                      abrirFamiliar(familiar);
+                    }
+                  }}
+                >
+                  {renderAvatar(familiar.nome, "grande")}
+
+                  <View style={styles.personInfo}>
+                    <Text style={styles.personName}>{familiar.nome}</Text>
+                    <Text style={styles.personRelation}>{familiar.relacao}</Text>
+
+                    <View style={styles.statusRow}>
+                      <View
+                        style={[
+                          styles.statusDot,
+                          familiar.status === "ativo"
+                            ? styles.statusAtivo
+                            : familiar.status === "pendente"
+                            ? styles.statusPendente
+                            : styles.statusRecusado,
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.statusText,
+                          familiar.status === "ativo"
+                            ? styles.statusTextAtivo
+                            : familiar.status === "pendente"
+                            ? styles.statusTextPendente
+                            : styles.statusTextRecusado,
+                        ]}
+                      >
+                        {familiar.status === "ativo"
+                          ? "Ativo"
+                          : familiar.status === "pendente"
+                          ? "Convite pendente"
+                          : "Convite recusado"}
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={[styles.familiarChipText, selected === f.id && { color: C.text }]}>{f.nome.split(" ")[0]}</Text>
+
+                  {familiar.status === "ativo" ? (
+                    <Ionicons name="chevron-forward" size={20} color={C.muted} />
+                  ) : familiar.status === "pendente" ? (
+                    <View style={styles.inviteActions}>
+                      <TouchableOpacity
+                        style={styles.acceptButton}
+                        activeOpacity={0.8}
+                        onPress={() => responderConvite(familiar, "aceito")}
+                      >
+                        <Ionicons name="checkmark" size={17} color="#FFFFFF" />
+                        <Text style={styles.acceptButtonText}>Aceitar</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.rejectButton}
+                        activeOpacity={0.8}
+                        onPress={() => responderConvite(familiar, "recusado")}
+                      >
+                        <Ionicons name="close" size={17} color={C.red} />
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
 
-            {familiar && (
-              <>
-                {/* Card principal do familiar */}
-                <View style={styles.card}>
-                  <View style={styles.familiarHeader}>
-                    <View style={styles.bigAvatar}>
-                      <Text style={styles.bigAvatarText}>{familiar.nome[0]}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.familiarNome}>{familiar.nome}</Text>
-                      <Text style={styles.familiarUpdate}>
-                        Última atualização{"\n"}Hoje, {formatHora(familiar.ultimaAtualizacao)}
-                      </Text>
-                    </View>
-                    <TouchableOpacity onPress={carregar}>
-                      <Ionicons name="refresh-outline" size={20} color={C.muted} />
-                    </TouchableOpacity>
-                  </View>
+            <TouchableOpacity style={styles.addAnotherButton} activeOpacity={0.8} onPress={adicionarFamiliar}>
+              <View style={styles.addAnotherIcon}>
+                <Ionicons name="add" size={22} color={C.accent} />
+              </View>
+              <View style={styles.addAnotherContent}>
+                <Text style={styles.addAnotherTitle}>Adicionar familiar ou cuidador</Text>
+                <Text style={styles.addAnotherSub}>
+                  Convide outra pessoa para acompanhar sua evolução.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={C.muted} />
+            </TouchableOpacity>
 
-                  {/* Stats */}
-                  <View style={styles.statsRow}>
-                    <View style={[styles.statBox, { borderColor: `${C.red}40` }]}>
-                      <Text style={[styles.statVal, { color: familiar.glicemia && familiar.glicemia > 180 ? C.red : C.green }]}>
-                        {familiar.glicemia ?? "—"}
-                      </Text>
-                      <Text style={styles.statUnit}>mg/dL</Text>
-                      <Text style={styles.statLabel}>Glicemia</Text>
-                    </View>
-                    <View style={[styles.statBox, { borderColor: `${C.green}40` }]}>
-                      <Text style={[styles.statVal, { color: C.green }]}>
-                        {familiar.medicacoes.tomadas} de {familiar.medicacoes.total}
-                      </Text>
-                      <Text style={styles.statUnit}>Medicações</Text>
-                      <Text style={styles.statLabel}>Tomas hoje</Text>
-                    </View>
-                    <View style={[styles.statBox, { borderColor: `${C.green}40` }]}>
-                      <Text style={[styles.statVal, { color: C.green }]}>{familiar.pressao ?? "—"}</Text>
-                      <Text style={styles.statUnit}>mmHg</Text>
-                      <Text style={styles.statLabel}>Pressão arterial</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Timeline do dia */}
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Hoje</Text>
-                  <View style={styles.card}>
-                    {familiar.timeline.length === 0 ? (
-                      <Text style={[styles.emptySub, { padding: 16 }]}>Nenhum registro hoje.</Text>
-                    ) : (
-                      familiar.timeline.map((t, i) => (
-                        <View key={i}>
-                          <View style={styles.timelineRow}>
-                            <Text style={styles.timelineHora}>{t.hora}</Text>
-                            <View style={[styles.timelineDot, { backgroundColor: t.status === "ok" ? C.green : C.orange }]} />
-                            <Text style={styles.timelineDesc}>{t.descricao}</Text>
-                            {t.valor && <Text style={[styles.timelineValor, { color: C.green }]}>{t.valor}</Text>}
-                          </View>
-                          {i < familiar.timeline.length - 1 && <View style={styles.divider} />}
-                        </View>
-                      ))
-                    )}
-                    <TouchableOpacity style={styles.verTudoBtn}>
-                      <Text style={styles.verTudoText}>Ver todas as medicações e registros do dia</Text>
-                      <Ionicons name="chevron-forward" size={16} color={C.accent} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Gráfico 7 dias */}
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Últimos 7 dias – Glicemia (mg/dL)</Text>
-                    <TouchableOpacity><Text style={styles.sectionLink}>Ver histórico completo ›</Text></TouchableOpacity>
-                  </View>
-                  <View style={styles.card}>
-                    {familiar.leituras7d.length < 2 ? (
-                      <Text style={[styles.emptySub, { padding: 16 }]}>Sem dados suficientes.</Text>
-                    ) : (
-                      <Svg width={CHART_W} height={CHART_H + 20}>
-                        <SvgLine x1="0" y1={toY(180)} x2={CHART_W} y2={toY(180)} stroke={C.red} strokeWidth="1" strokeDasharray="3,3" opacity={0.5} />
-                        <SvgLine x1="0" y1={toY(100)} x2={CHART_W} y2={toY(100)} stroke={C.green} strokeWidth="1" strokeDasharray="3,3" opacity={0.5} />
-                        {chartPoints && <Polyline points={chartPoints} fill="none" stroke={C.orange} strokeWidth="2" />}
-                        {familiar.leituras7d.map((v, i) => {
-                          const x = (i / (familiar.leituras7d.length - 1)) * CHART_W;
-                          return <Circle key={i} cx={x} cy={toY(v)} r={5} fill={glColor(v)} />;
-                        })}
-                      </Svg>
-                    )}
-                  </View>
-                </View>
-
-                {/* Alertas */}
-                {familiar.alertas.length > 0 && (
-                  <View style={styles.alertCard}>
-                    <Ionicons name="warning-outline" size={18} color={C.yellow} style={{ marginRight: 8 }} />
-                    <Text style={styles.alertText}>{familiar.alertas[0]}</Text>
-                  </View>
-                )}
-
-                {/* Próxima consulta */}
-                {familiar.proximaConsulta && (
-                  <View style={styles.consultaCard}>
-                    <Ionicons name="calendar-outline" size={20} color={C.accent} style={{ marginRight: 12 }} />
-                    <View>
-                      <Text style={styles.consultaLabel}>Próxima consulta</Text>
-                      <Text style={styles.consultaData}>{familiar.proximaConsulta.data} – {familiar.proximaConsulta.hora}</Text>
-                      <Text style={styles.consultaMedico}>{familiar.proximaConsulta.medico}</Text>
-                    </View>
-                  </View>
-                )}
-              </>
-            )}
+            <View style={styles.privacyCard}>
+              <View style={styles.privacyIcon}>
+                <Ionicons name="shield-checkmark-outline" size={21} color={C.green} />
+              </View>
+              <View style={styles.privacyContent}>
+                <Text style={styles.privacyTitle}>Você controla o que pode ser compartilhado.</Text>
+                <Text style={styles.privacyText}>
+                  As permissões de cada familiar podem ser alteradas a qualquer momento.
+                </Text>
+              </View>
+            </View>
           </>
         )}
+
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
@@ -331,48 +290,130 @@ export default function EspacoFamiliarScreen({ navigation }: { navigation?: any 
 }
 
 const styles = StyleSheet.create({
-  container:       { flex: 1, backgroundColor: C.bg },
-  scroll:          { paddingHorizontal: 16, paddingTop: 8 },
-  pageHeader:      { marginBottom: 16 },
-  pageTitle:       { fontFamily: A, fontWeight: "800", fontSize: 26, color: C.text, marginBottom: 4 },
-  pageSub:         { fontFamily: A, fontSize: 13, color: C.muted },
-  card:            { backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, overflow: "hidden", marginBottom: 0 },
-  section:         { marginBottom: 16 },
-  sectionHeader:   { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
-  sectionTitle:    { fontFamily: A, fontWeight: "700", fontSize: 14, color: C.text },
-  sectionLink:     { fontFamily: A, fontSize: 12, color: C.accent },
-  divider:         { height: 1, backgroundColor: C.border },
-  emptyCard:       { backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, padding: 32, alignItems: "center", gap: 10 },
-  emptyTitle:      { fontFamily: A, fontWeight: "700", fontSize: 16, color: C.text },
-  emptySub:        { fontFamily: A, fontSize: 13, color: C.muted, textAlign: "center" },
-  addBtn:          { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 20, marginTop: 8 },
-  addBtnText:      { fontFamily: A, fontWeight: "700", fontSize: 14, color: "#FFF" },
-  familiarChip:    { flexDirection: "row", alignItems: "center", backgroundColor: C.surface, borderRadius: 30, borderWidth: 1, borderColor: C.border, paddingVertical: 8, paddingHorizontal: 14, marginRight: 10, gap: 8 },
-  familiarChipActive: { borderColor: C.accent, backgroundColor: "rgba(124,92,255,0.15)" },
-  familiarChipText:{ fontFamily: A, fontSize: 13, color: C.muted },
-  familiarAvatar:  { width: 28, height: 28, borderRadius: 14, backgroundColor: C.accent, alignItems: "center", justifyContent: "center" },
-  familiarAvatarText: { fontFamily: A, fontWeight: "700", fontSize: 13, color: "#FFF" },
-  familiarHeader:  { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderBottomWidth: 1, borderBottomColor: C.border },
-  bigAvatar:       { width: 48, height: 48, borderRadius: 24, backgroundColor: C.accent, alignItems: "center", justifyContent: "center" },
-  bigAvatarText:   { fontFamily: A, fontWeight: "800", fontSize: 20, color: "#FFF" },
-  familiarNome:    { fontFamily: A, fontWeight: "700", fontSize: 16, color: C.text, marginBottom: 2 },
-  familiarUpdate:  { fontFamily: A, fontSize: 11, color: C.muted, lineHeight: 16 },
-  statsRow:        { flexDirection: "row", padding: 12, gap: 8 },
-  statBox:         { flex: 1, backgroundColor: "#0B0A24", borderRadius: 12, borderWidth: 1, padding: 10, alignItems: "center" },
-  statVal:         { fontFamily: A, fontWeight: "800", fontSize: 18 },
-  statUnit:        { fontFamily: A, fontSize: 10, color: C.muted },
-  statLabel:       { fontFamily: A, fontSize: 10, color: C.muted, textAlign: "center" },
-  timelineRow:     { flexDirection: "row", alignItems: "center", padding: 12, gap: 10 },
-  timelineHora:    { fontFamily: A, fontSize: 12, color: C.muted, width: 40 },
-  timelineDot:     { width: 8, height: 8, borderRadius: 4 },
-  timelineDesc:    { fontFamily: A, fontSize: 13, color: C.text, flex: 1 },
-  timelineValor:   { fontFamily: A, fontWeight: "700", fontSize: 13 },
-  verTudoBtn:      { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(124,92,255,0.15)", margin: 12, borderRadius: 12, paddingVertical: 12, gap: 6 },
-  verTudoText:     { fontFamily: A, fontSize: 13, color: C.accent, fontWeight: "600" },
-  alertCard:       { flexDirection: "row", alignItems: "flex-start", backgroundColor: "rgba(255,214,107,0.08)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,214,107,0.2)", padding: 14, marginBottom: 14 },
-  alertText:       { fontFamily: A, fontSize: 13, color: C.muted, flex: 1, lineHeight: 19 },
-  consultaCard:    { flexDirection: "row", alignItems: "center", backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 14, marginBottom: 14 },
-  consultaLabel:   { fontFamily: A, fontSize: 11, color: C.muted, marginBottom: 2 },
-  consultaData:    { fontFamily: A, fontWeight: "700", fontSize: 14, color: C.text },
-  consultaMedico:  { fontFamily: A, fontSize: 12, color: C.muted },
+  container: { flex: 1, backgroundColor: C.bg },
+  scroll: { paddingHorizontal: 16, paddingTop: 8 },
+  pageHeader: { marginBottom: 20 },
+  pageTitle: { fontFamily: A, fontWeight: "800", fontSize: 26, color: C.text, marginBottom: 5 },
+  pageSub: { fontFamily: A, fontSize: 13, color: C.muted, lineHeight: 19 },
+  loading: { marginTop: 50 },
+
+  emptyCard: {
+    backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border,
+    padding: 28, alignItems: "center",
+  },
+  emptyIcon: {
+    width: 68, height: 68, borderRadius: 34, backgroundColor: "rgba(124,92,255,0.12)",
+    alignItems: "center", justifyContent: "center", marginBottom: 18,
+  },
+  emptyTitle: {
+    fontFamily: A, fontWeight: "700", fontSize: 17, color: C.text,
+    marginBottom: 8, textAlign: "center",
+  },
+  emptySub: {
+    fontFamily: A, fontSize: 13, color: C.muted, lineHeight: 19,
+    textAlign: "center", maxWidth: 300,
+  },
+  addButton: {
+    width: "100%", backgroundColor: C.accent, borderRadius: 14, minHeight: 50,
+    paddingHorizontal: 18, marginTop: 22, flexDirection: "row",
+    alignItems: "center", justifyContent: "center", gap: 7,
+  },
+  addButtonText: { fontFamily: A, fontWeight: "700", fontSize: 14, color: "#FFFFFF" },
+
+  summaryCard: {
+    backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border,
+    padding: 16, flexDirection: "row", alignItems: "center", marginBottom: 22,
+  },
+  summaryIcon: {
+    width: 46, height: 46, borderRadius: 14, backgroundColor: "rgba(124,92,255,0.12)",
+    alignItems: "center", justifyContent: "center", marginRight: 13,
+  },
+  summaryContent: { flex: 1 },
+  summaryNumber: { fontFamily: A, fontWeight: "800", fontSize: 21, color: C.text },
+  summaryText: { fontFamily: A, fontSize: 12, color: C.muted, marginTop: 2 },
+
+  section: { marginBottom: 18 },
+  sectionTitle: { fontFamily: A, fontWeight: "700", fontSize: 14, color: C.text, marginBottom: 9 },
+  personCard: {
+    backgroundColor: C.surface, borderRadius: 17, borderWidth: 1, borderColor: C.border,
+    padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 9,
+  },
+  avatar: {
+    width: 38, height: 38, borderRadius: 19, backgroundColor: C.accent,
+    alignItems: "center", justifyContent: "center",
+  },
+  avatarGrande: { width: 48, height: 48, borderRadius: 24 },
+  avatarText: { fontFamily: A, fontWeight: "800", fontSize: 15, color: "#FFFFFF" },
+  avatarTextGrande: { fontSize: 19 },
+  personInfo: { flex: 1, marginLeft: 13 },
+  personName: { fontFamily: A, fontWeight: "700", fontSize: 15, color: C.text },
+  personRelation: { fontFamily: A, fontSize: 12, color: C.muted, marginTop: 2 },
+  statusRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+  statusDot: { width: 7, height: 7, borderRadius: 4, marginRight: 6 },
+  statusAtivo: { backgroundColor: C.green },
+  statusPendente: { backgroundColor: C.yellow },
+  statusRecusado: { backgroundColor: C.red },
+  statusText: { fontFamily: A, fontSize: 11, fontWeight: "600" },
+  statusTextAtivo: { color: C.green },
+  statusTextPendente: { color: C.yellow },
+  statusTextRecusado: { color: C.red },
+
+  inviteActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginLeft: 8,
+  },
+
+  acceptButton: {
+    minHeight: 36,
+    paddingHorizontal: 11,
+    borderRadius: 10,
+    backgroundColor: C.green,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+  },
+
+  acceptButtonText: {
+    fontFamily: A,
+    fontWeight: "700",
+    fontSize: 11,
+    color: "#FFFFFF",
+  },
+
+  rejectButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,107,107,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,107,107,0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  addAnotherButton: {
+    backgroundColor: "rgba(124,92,255,0.08)", borderRadius: 17, borderWidth: 1,
+    borderColor: "rgba(124,92,255,0.28)", padding: 14, flexDirection: "row",
+    alignItems: "center", marginBottom: 14,
+  },
+  addAnotherIcon: {
+    width: 44, height: 44, borderRadius: 13, backgroundColor: "rgba(124,92,255,0.13)",
+    alignItems: "center", justifyContent: "center", marginRight: 12,
+  },
+  addAnotherContent: { flex: 1 },
+  addAnotherTitle: { fontFamily: A, fontWeight: "700", fontSize: 13, color: C.text },
+  addAnotherSub: { fontFamily: A, fontSize: 11, color: C.muted, lineHeight: 16, marginTop: 3 },
+
+  privacyCard: {
+    backgroundColor: "rgba(79,209,165,0.06)", borderRadius: 16, borderWidth: 1,
+    borderColor: "rgba(79,209,165,0.15)", padding: 14, flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  privacyIcon: { marginRight: 10, marginTop: 1 },
+  privacyContent: { flex: 1 },
+  privacyTitle: { fontFamily: A, fontWeight: "700", fontSize: 12, color: C.text, lineHeight: 17 },
+  privacyText: { fontFamily: A, fontSize: 11, color: C.muted, lineHeight: 17, marginTop: 3 },
 });
