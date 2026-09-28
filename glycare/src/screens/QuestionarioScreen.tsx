@@ -46,7 +46,6 @@ const PERGUNTAS = [
   { key: "sono",                question: "Como está a qualidade do seu sono?",                        options: ["Durmo bem", "Durmo mal às vezes", "Durmo mal com frequência", "Não sei avaliar"] },
   { key: "notificacoes",        question: "Você gostaria de receber lembretes do aplicativo?",         options: ["Sim, lembretes de glicemia", "Sim, lembretes de remédios", "Sim, ambos", "Prefiro não receber"] },
   { key: "objetivo",            question: "Qual é o seu maior objetivo com o aplicativo?",             options: ["Estabilizar minha glicemia", "Perder peso", "Ter mais controle na rotina", "Aprender mais sobre diabetes"] },
-  // ← "Não binário" removido; adicionado "Prefiro não identificar"
   { key: "genero",              question: "Qual é o seu gênero?",                                      options: ["Masculino", "Feminino", "Prefiro não identificar"] },
   { key: "tipo_sanguineo",      question: "Qual é o seu tipo sanguíneo?",                              options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Não sei"] },
 ];
