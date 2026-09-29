@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Animated, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Animated, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { supabase } from '../lib/supabase';
@@ -7,6 +8,7 @@ import { verificarEAtualizarStreak } from '../lib/dailyReset';
 
 const A = "Arial";
 const C = { bg:"#0B0A24", surface:"#13122E", border:"rgba(255,255,255,0.08)", accent:"#7C5CFF", text:"#F5F3FF", muted:"#A5A3C7", pink:"#FF7597", yellow:"#FFD66B", green:"#4FD1A5" };
+
 const QUICK_ACTIONS = [
   { id:'receitas',   label:'Receitas',   icon:'restaurant-outline' as const, tint:'#FFB86B', soft:'rgba(255,184,107,0.14)' },
   { id:'exercicios', label:'Exercícios', icon:'walk-outline'        as const, tint:'#34D6B4', soft:'rgba(52,214,180,0.14)'  },
@@ -24,26 +26,21 @@ const { width } = Dimensions.get('window');
 const PAD=20, CARD_W=(width-PAD*2-12)/2;
 
 export default function HomeScreen({ navigation }: { navigation?: any }) {
-  const [mood,        setMood]        = useState<string|null>(null);
-  const [nome,        setNome]        = useState('');
-  const [streak,      setStreak]      = useState(0);
-  const [carregando,  setCarregando]  = useState(true);
+  const [mood,       setMood]       = useState<string|null>(null);
+  const [nome,       setNome]       = useState('');
+  const [streak,     setStreak]     = useState(0);
+  const [carregando, setCarregando] = useState(true);
   const pressAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     async function carregar() {
       try {
-        // 1. Atualiza streak (daily reset automático)
         const novoStreak = await verificarEAtualizarStreak();
         setStreak(novoStreak);
-
-        // 2. Busca nome
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data: perfil } = await supabase.from('perfis').select('nome_completo').eq('id', user.id).single();
         if (perfil?.nome_completo) setNome(perfil.nome_completo.split(' ')[0]);
-
-        // 3. Humor de hoje
         const hoje = new Date();
         const inicioDia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).toISOString();
         const { data: humor } = await supabase.from('registros_diarios')
@@ -71,23 +68,30 @@ export default function HomeScreen({ navigation }: { navigation?: any }) {
   const onIn  = () => Animated.spring(pressAnim, { toValue: 0.96, useNativeDriver: true, speed: 40 }).start();
   const onOut = () => Animated.spring(pressAnim, { toValue: 1,    useNativeDriver: true, speed: 40 }).start();
 
-  if (carregando) return <View style={{ flex:1, backgroundColor:C.bg, alignItems:'center', justifyContent:'center' }}><ActivityIndicator color={C.accent} /></View>;
+  if (carregando) return (
+    <View style={{ flex:1, backgroundColor:C.bg, alignItems:'center', justifyContent:'center' }}>
+      <ActivityIndicator color={C.accent} />
+    </View>
+  );
 
   return (
-    <View style={s.root}>
+    <SafeAreaView style={s.root}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+
+        {/* Header fixo com menu + brand + sino */}
         <View style={s.header}>
-          <TouchableOpacity onPress={() => navigation?.openDrawer?.()}>
-            <Ionicons name="menu" size={26} color={C.text} />
+          <TouchableOpacity style={s.headerBtn} onPress={() => navigation?.openDrawer?.()}>
+            <Ionicons name="menu" size={22} color={C.text} />
           </TouchableOpacity>
           <Text style={s.brand}>GlyCare</Text>
-          <TouchableOpacity style={s.bell}>
+          <TouchableOpacity style={s.headerBtn}>
             <Ionicons name="notifications-outline" size={22} color={C.text} />
             <View style={s.bellDot} />
           </TouchableOpacity>
         </View>
 
+        {/* Saudação */}
         <Text style={s.greeting}>Olá, {nome || 'Usuário'} 👋</Text>
         <Text style={s.greetSub}>Vamos cuidar da sua saúde hoje</Text>
 
@@ -161,17 +165,17 @@ export default function HomeScreen({ navigation }: { navigation?: any }) {
         </View>
         <View style={{ height:32 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
   root:       { flex:1, backgroundColor:C.bg },
-  scroll:     { paddingHorizontal:PAD, paddingTop:16 },
-  header:     { flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:24 },
+  scroll:     { paddingHorizontal:PAD, paddingTop:8 },
+  header:     { flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:20, paddingVertical:4 },
+  headerBtn:  { width:38, height:38, borderRadius:12, backgroundColor:C.surface, alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:C.border },
   brand:      { fontFamily:A, fontWeight:'700', fontSize:17, color:C.text },
-  bell:       { width:38, height:38, borderRadius:19, backgroundColor:C.surface, alignItems:'center', justifyContent:'center' },
-  bellDot:    { position:'absolute', top:8, right:8, width:7, height:7, borderRadius:3.5, backgroundColor:C.pink, borderWidth:1.5, borderColor:C.bg },
+  bellDot:    { position:'absolute', top:6, right:6, width:7, height:7, borderRadius:3.5, backgroundColor:C.pink, borderWidth:1.5, borderColor:C.bg },
   greeting:   { fontFamily:A, fontWeight:'800', fontSize:24, color:C.text, marginBottom:4 },
   greetSub:   { fontFamily:A, fontSize:14, color:C.muted, marginBottom:20 },
   heroCard:   { backgroundColor:C.surface, borderRadius:20, borderWidth:1, borderColor:C.border, padding:20, flexDirection:'row', alignItems:'center', gap:16, marginBottom:28 },

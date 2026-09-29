@@ -1,425 +1,169 @@
 import React from 'react';
-import {
-  Dimensions,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { RECIPES, Recipe } from './RecipesScreen';
 
-import { RECIPES, Recipe } from '../screens/RecipesScreen';
-
-// ---------------------------------------------------------------------------
-// Dependências (mesmas das outras telas):
-//   npx expo install expo-linear-gradient react-native-svg
-// ---------------------------------------------------------------------------
-
+const A = "Arial";
+const C = { bg:"#0B0A24", surface:"#13122E", border:"rgba(255,255,255,0.08)", accent:"#7C5CFF", text:"#F5F3FF", muted:"#A5A3C7", green:"#4FD1A5", orange:"#FFB86B", yellow:"#FFD66B", pink:"#FF7597" };
 const { width } = Dimensions.get('window');
-const SIDE_PADDING = 24;
+const PAD = 20;
 
-const FALLBACK_RECIPE_ID = 'bolo-de-batata-doce';
-
-interface RecipeDetailScreenProps {
-  navigation?: any;
-  route?: { params?: { recipeId?: string } };
-  onSaveRecipe?: () => void;
-}
-
-export default function RecipeDetailScreen({
-  navigation,
-  route,
-  onSaveRecipe,
-}: RecipeDetailScreenProps) {
-  const recipeId = route?.params?.recipeId ?? FALLBACK_RECIPE_ID;
-  const recipe: Recipe = RECIPES[recipeId] ?? RECIPES[FALLBACK_RECIPE_ID];
+export default function RecipeDetailScreen({ navigation, route }: { navigation?: any; route?: any }) {
+  const recipeId = route?.params?.recipeId ?? 'bolo-de-batata-doce';
+  const recipe: Recipe = RECIPES[recipeId] ?? RECIPES['bolo-de-batata-doce'];
 
   return (
-    <View style={styles.root}>
-      <LinearGradient colors={['#181545', '#100E33', '#0B0A24']} style={StyleSheet.absoluteFill} />
-      <View style={styles.glowTop} pointerEvents="none" />
-      <View style={styles.glowBottom} pointerEvents="none" />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <SafeAreaView style={s.safe}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            hitSlop={10}
-            style={styles.backButton}
-            onPress={() => navigation?.goBack?.()}
-          >
-            <Ionicons name="chevron-back" size={22} color="#F5F3FF" />
+        <View style={s.header}>
+          <TouchableOpacity style={s.backBtn} onPress={() => navigation?.goBack?.()}>
+            <Ionicons name="arrow-back" size={22} color={C.text} />
           </TouchableOpacity>
-
-          <TouchableOpacity hitSlop={10} style={styles.saveButton} onPress={onSaveRecipe}>
-            <Ionicons name="bookmark-outline" size={18} color="#F5F3FF" />
+          <Text style={s.pageTitle} numberOfLines={1}>{recipe.title}</Text>
+          <TouchableOpacity style={s.backBtn}>
+            <Ionicons name="bookmark-outline" size={20} color={C.text} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.pageTitle}>{recipe.title}</Text>
-
-        {/* Imagem de destaque */}
-        <View style={styles.heroCard}>
-          <Image source={{ uri: recipe.imageUri }} style={styles.heroImage} />
-          <LinearGradient
-            colors={['rgba(11,10,36,0)', 'rgba(11,10,36,0.55)']}
-            style={styles.heroOverlay}
-            pointerEvents="none"
-          />
+        {/* Hero */}
+        <View style={s.heroCard}>
+          <Image source={{ uri: recipe.imageUri }} style={s.heroImg} />
+          <View style={s.heroOverlay} />
         </View>
 
-        {/* Chips de info rápida */}
-        <View style={styles.metaRow}>
-          <View style={styles.metaChip}>
-            <Ionicons name="time-outline" size={14} color="#A897FF" />
-            <Text style={styles.metaChipText}>{recipe.time}</Text>
-          </View>
-          <View style={styles.metaChip}>
-            <Ionicons name="speedometer-outline" size={14} color="#34D6B4" />
-            <Text style={styles.metaChipText}>{recipe.difficulty}</Text>
-          </View>
-          <View style={styles.metaChip}>
-            <Ionicons name="people-outline" size={14} color="#FF8A65" />
-            <Text style={styles.metaChipText}>{recipe.servings}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.introText}>{recipe.intro}</Text>
-
-        {/* Por que é boa para diabetes */}
-        <View style={styles.sectionHeaderRow}>
-          <Ionicons name="heart-outline" size={16} color="#FF7597" />
-          <Text style={styles.sectionTitle}>Por que é boa para diabetes</Text>
-        </View>
-        <View style={styles.benefitsCard}>
-          {recipe.diabetesBenefits.map((benefit, index) => (
-            <View
-              key={index}
-              style={[
-                styles.benefitRow,
-                index === recipe.diabetesBenefits.length - 1 && { marginBottom: 0 },
-              ]}
-            >
-              <View style={styles.benefitDot} />
-              <Text style={styles.benefitText}>{benefit}</Text>
+        {/* Meta chips */}
+        <View style={s.metaRow}>
+          {[
+            { icon:'time-outline', label: recipe.time, color:'#A897FF' },
+            { icon:'speedometer-outline', label: recipe.difficulty, color:C.green },
+            { icon:'people-outline', label: recipe.servings, color:C.orange },
+          ].map(m => (
+            <View key={m.label} style={s.metaChip}>
+              <Ionicons name={m.icon as any} size={14} color={m.color} />
+              <Text style={[s.metaText, { color: m.color }]}>{m.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Informação nutricional */}
-        <View style={styles.sectionHeaderRow}>
-          <Ionicons name="stats-chart-outline" size={16} color="#9F8FFF" />
-          <Text style={styles.sectionTitle}>Informação nutricional</Text>
+        <Text style={s.intro}>{recipe.intro}</Text>
+
+        {/* Benefícios */}
+        <View style={s.sectionRow}>
+          <Ionicons name="heart-outline" size={16} color={C.pink} />
+          <Text style={s.sectionTitle}>Por que é boa para diabetes</Text>
         </View>
-        <View style={styles.nutritionGrid}>
-          {recipe.nutrition.map((item) => (
-            <View key={item.label} style={styles.nutritionCard}>
-              <Text style={styles.nutritionValue}>{item.value}</Text>
-              <Text style={styles.nutritionLabel}>{item.label}</Text>
+        <View style={[s.listCard, { borderColor:`${C.pink}30` }]}>
+          {recipe.diabetesBenefits.map((b, i) => (
+            <View key={i} style={[s.listRow, i < recipe.diabetesBenefits.length-1 && s.listBorder]}>
+              <View style={[s.dot, { backgroundColor: C.pink }]} />
+              <Text style={s.listText}>{b}</Text>
             </View>
           ))}
         </View>
-        <Text style={styles.nutritionCaption}>Valores aproximados por porção</Text>
+
+        {/* Nutrição */}
+        <View style={s.sectionRow}>
+          <Ionicons name="stats-chart-outline" size={16} color={C.accent} />
+          <Text style={s.sectionTitle}>Informação nutricional</Text>
+        </View>
+        <View style={s.nutritionGrid}>
+          {recipe.nutrition.map(n => (
+            <View key={n.label} style={s.nutritionCard}>
+              <Text style={s.nutritionVal}>{n.value}</Text>
+              <Text style={s.nutritionLbl}>{n.label}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={s.nutritionCap}>Valores aproximados por porção</Text>
 
         {/* Curiosidade */}
-        <View style={styles.funFactCard}>
-          <View style={styles.funFactIconWrap}>
-            <Ionicons name="sparkles-outline" size={18} color="#FFD66B" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.funFactTitle}>Você sabia?</Text>
-            <Text style={styles.funFactText}>{recipe.funFact}</Text>
+        <View style={s.funCard}>
+          <View style={s.funIcon}><Ionicons name="sparkles-outline" size={18} color={C.yellow} /></View>
+          <View style={{ flex:1 }}>
+            <Text style={s.funTitle}>Você sabia?</Text>
+            <Text style={s.funText}>{recipe.funFact}</Text>
           </View>
         </View>
 
         {/* Ingredientes */}
-        <View style={styles.sectionHeaderRow}>
-          <Ionicons name="basket-outline" size={16} color="#FFB86B" />
-          <Text style={styles.sectionTitle}>Ingredientes</Text>
+        <View style={s.sectionRow}>
+          <Ionicons name="basket-outline" size={16} color={C.orange} />
+          <Text style={s.sectionTitle}>Ingredientes</Text>
         </View>
-        <View style={styles.listCard}>
-          {recipe.ingredients.map((ingredient, index) => (
-            <View
-              key={index}
-              style={[
-                styles.ingredientRow,
-                index === recipe.ingredients.length - 1 && { marginBottom: 0, borderBottomWidth: 0 },
-              ]}
-            >
-              <View style={styles.checkCircle}>
-                <Ionicons name="checkmark" size={12} color="#0B0A24" />
-              </View>
-              <Text style={styles.ingredientText}>{ingredient}</Text>
+        <View style={s.listCard}>
+          {recipe.ingredients.map((ing, i) => (
+            <View key={i} style={[s.listRow, i < recipe.ingredients.length-1 && s.listBorder]}>
+              <View style={s.checkCircle}><Ionicons name="checkmark" size={12} color={C.bg} /></View>
+              <Text style={s.listText}>{ing}</Text>
             </View>
           ))}
         </View>
 
-        {/* Modo de preparo */}
-        <View style={styles.sectionHeaderRow}>
-          <Ionicons name="list-outline" size={16} color="#34D6B4" />
-          <Text style={styles.sectionTitle}>Modo de preparo</Text>
+        {/* Preparo */}
+        <View style={s.sectionRow}>
+          <Ionicons name="list-outline" size={16} color={C.green} />
+          <Text style={s.sectionTitle}>Modo de preparo</Text>
         </View>
-        <View style={styles.listCard}>
-          {recipe.steps.map((step, index) => (
-            <View
-              key={index}
-              style={[
-                styles.stepRow,
-                index === recipe.steps.length - 1 && { marginBottom: 0 },
-              ]}
-            >
-              <View style={styles.stepNumberCircle}>
-                <Text style={styles.stepNumberText}>{index + 1}</Text>
-              </View>
-              <Text style={styles.stepText}>{step}</Text>
+        <View style={s.listCard}>
+          {recipe.steps.map((step, i) => (
+            <View key={i} style={[s.listRow, i < recipe.steps.length-1 && s.listBorder]}>
+              <View style={s.stepNum}><Text style={s.stepNumText}>{i+1}</Text></View>
+              <Text style={s.listText}>{step}</Text>
             </View>
           ))}
         </View>
 
-        {/* Dica GlyCare */}
-        <View style={styles.tipCard}>
-          <View style={styles.tipIconWrap}>
-            <Ionicons name="bulb-outline" size={18} color="#FFD66B" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.tipTitle}>Dica GlyCare</Text>
-            <Text style={styles.tipText}>{recipe.tip}</Text>
+        {/* Dica */}
+        <View style={s.tipCard}>
+          <View style={s.tipIcon}><Ionicons name="bulb-outline" size={18} color={C.yellow} /></View>
+          <View style={{ flex:1 }}>
+            <Text style={s.tipTitle}>Dica GlyCare</Text>
+            <Text style={s.tipText}>{recipe.tip}</Text>
           </View>
         </View>
+
+        <View style={{ height:40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0B0A24' },
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: SIDE_PADDING, paddingTop: 16, paddingBottom: 48 },
-  glowTop: {
-    position: 'absolute',
-    top: -80,
-    right: -60,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(124,92,255,0.18)',
-  },
-  glowBottom: {
-    position: 'absolute',
-    bottom: -100,
-    left: -80,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: 'rgba(52,214,180,0.10)',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#F5F3FF',
-    marginBottom: 16,
-  },
-  heroCard: {
-    height: 190,
-    borderRadius: 26,
-    overflow: 'hidden',
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    backgroundColor: '#1C1856',
-  },
-  heroImage: { width: '100%', height: '100%' },
-  heroOverlay: { ...StyleSheet.absoluteFillObject },
-  metaRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  metaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  metaChipText: { fontSize: 12, fontWeight: '700', color: '#F5F3FF' },
-  introText: {
-    fontSize: 13.5,
-    lineHeight: 20,
-    color: '#C7C5E0',
-    marginBottom: 26,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#F5F3FF',
-  },
-  benefitsCard: {
-    backgroundColor: 'rgba(255,117,151,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,117,151,0.16)',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 26,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  benefitDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FF7597',
-    marginTop: 6,
-    marginRight: 10,
-  },
-  benefitText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 19,
-    color: '#E6E4F5',
-  },
-  nutritionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  nutritionCard: {
-    width: (width - SIDE_PADDING * 2 - 20) / 2,
-    backgroundColor: 'rgba(255,255,255,0.045)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  nutritionValue: { fontSize: 16, fontWeight: '800', color: '#F5F3FF', marginBottom: 3 },
-  nutritionLabel: { fontSize: 11.5, color: '#A5A3C7', fontWeight: '600' },
-  nutritionCaption: {
-    fontSize: 11,
-    color: '#7A78A3',
-    marginBottom: 26,
-  },
-  funFactCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,214,107,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,214,107,0.18)',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 26,
-  },
-  funFactIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,214,107,0.16)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  funFactTitle: { fontSize: 13, fontWeight: '700', color: '#F5F3FF', marginBottom: 3 },
-  funFactText: { fontSize: 12.5, color: '#C7C5E0', lineHeight: 17 },
-  listCard: {
-    backgroundColor: 'rgba(255,255,255,0.045)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 26,
-  },
-  ingredientRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 12,
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#34D6B4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  ingredientText: { flex: 1, fontSize: 13.5, color: '#E6E4F5', fontWeight: '500' },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  stepNumberCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(159,143,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  stepNumberText: { fontSize: 12, fontWeight: '800', color: '#A897FF' },
-  stepText: { flex: 1, fontSize: 13.5, lineHeight: 20, color: '#E6E4F5' },
-  tipCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,214,107,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,214,107,0.18)',
-    borderRadius: 18,
-    padding: 16,
-  },
-  tipIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,214,107,0.16)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  tipTitle: { fontSize: 13, fontWeight: '700', color: '#F5F3FF', marginBottom: 3 },
-  tipText: { fontSize: 12.5, color: '#C7C5E0', lineHeight: 17 },
+const s = StyleSheet.create({
+  safe:         { flex:1, backgroundColor:C.bg },
+  scroll:       { paddingHorizontal:PAD, paddingTop:8 },
+  header:       { flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:16 },
+  backBtn:      { width:38, height:38, borderRadius:12, backgroundColor:C.surface, borderWidth:1, borderColor:C.border, alignItems:'center', justifyContent:'center' },
+  pageTitle:    { fontFamily:A, fontWeight:'800', fontSize:18, color:C.text, flex:1, textAlign:'center', marginHorizontal:8 },
+  heroCard:     { borderRadius:20, overflow:'hidden', height:180, marginBottom:14, position:'relative' },
+  heroImg:      { width:'100%', height:'100%' },
+  heroOverlay:  { ...StyleSheet.absoluteFillObject, backgroundColor:'rgba(11,10,36,0.3)' },
+  metaRow:      { flexDirection:'row', gap:10, marginBottom:16 },
+  metaChip:     { flexDirection:'row', alignItems:'center', gap:6, backgroundColor:C.surface, borderRadius:12, paddingHorizontal:12, paddingVertical:7, borderWidth:1, borderColor:C.border },
+  metaText:     { fontFamily:A, fontWeight:'700', fontSize:12 },
+  intro:        { fontFamily:A, fontSize:13, color:C.muted, lineHeight:20, marginBottom:24 },
+  sectionRow:   { flexDirection:'row', alignItems:'center', gap:8, marginBottom:10 },
+  sectionTitle: { fontFamily:A, fontWeight:'800', fontSize:15, color:C.text },
+  listCard:     { backgroundColor:C.surface, borderRadius:18, borderWidth:1, borderColor:C.border, padding:16, marginBottom:22 },
+  listRow:      { flexDirection:'row', alignItems:'flex-start', paddingVertical:8, gap:12 },
+  listBorder:   { borderBottomWidth:1, borderBottomColor:C.border },
+  dot:          { width:7, height:7, borderRadius:3.5, marginTop:6 },
+  listText:     { flex:1, fontFamily:A, fontSize:13, color:'#E6E4F5', lineHeight:19 },
+  checkCircle:  { width:20, height:20, borderRadius:10, backgroundColor:C.green, alignItems:'center', justifyContent:'center', marginTop:1 },
+  stepNum:      { width:24, height:24, borderRadius:12, backgroundColor:'rgba(159,143,255,0.18)', alignItems:'center', justifyContent:'center' },
+  stepNumText:  { fontFamily:A, fontWeight:'800', fontSize:11, color:'#A897FF' },
+  nutritionGrid:{ flexDirection:'row', flexWrap:'wrap', justifyContent:'space-between', marginBottom:6 },
+  nutritionCard:{ width:(width-PAD*2-12)/2, backgroundColor:C.surface, borderRadius:14, borderWidth:1, borderColor:C.border, paddingVertical:12, alignItems:'center', marginBottom:10 },
+  nutritionVal: { fontFamily:A, fontWeight:'800', fontSize:16, color:C.text, marginBottom:2 },
+  nutritionLbl: { fontFamily:A, fontSize:11, color:C.muted },
+  nutritionCap: { fontFamily:A, fontSize:11, color:C.muted, marginBottom:22 },
+  funCard:      { flexDirection:'row', backgroundColor:'rgba(255,214,107,0.08)', borderWidth:1, borderColor:'rgba(255,214,107,0.18)', borderRadius:16, padding:14, marginBottom:22 },
+  funIcon:      { width:34, height:34, borderRadius:10, backgroundColor:'rgba(255,214,107,0.15)', alignItems:'center', justifyContent:'center', marginRight:10 },
+  funTitle:     { fontFamily:A, fontWeight:'700', fontSize:13, color:C.text, marginBottom:2 },
+  funText:      { fontFamily:A, fontSize:12, color:C.muted, lineHeight:17 },
+  tipCard:      { flexDirection:'row', backgroundColor:'rgba(255,214,107,0.08)', borderWidth:1, borderColor:'rgba(255,214,107,0.18)', borderRadius:16, padding:14 },
+  tipIcon:      { width:34, height:34, borderRadius:10, backgroundColor:'rgba(255,214,107,0.15)', alignItems:'center', justifyContent:'center', marginRight:10 },
+  tipTitle:     { fontFamily:A, fontWeight:'700', fontSize:13, color:C.text, marginBottom:2 },
+  tipText:      { fontFamily:A, fontSize:12, color:C.muted, lineHeight:17 },
 });
