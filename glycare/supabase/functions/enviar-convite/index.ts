@@ -14,7 +14,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 // Enquanto você não verifica um domínio no Resend, use o remetente de teste
 // (ele só entrega para o e-mail dono da conta Resend).
-const FROM = Deno.env.get("EMAIL_FROM") ?? "GlyCare <onboarding@resend.dev>";
+const FROM = Deno.env.get("EMAIL_FROM") ?? "Glico <onboarding@resend.dev>";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -74,7 +74,7 @@ serve(async (req) => {
 <h1 style="color:#F5F3FF;font-size:22px;margin:0 0 8px;">Você foi convidado(a) 👋</h1>
 <p style="color:#A5A3C7;font-size:14px;line-height:22px;margin:0;">
 <strong style="color:#F5F3FF;">${esc(nomePaciente)}</strong> convidou você, <strong style="color:#F5F3FF;">${esc(convite.nome)}</strong>,
-para acompanhar a jornada de saúde dele(a) no GlyCare como <strong style="color:#F5F3FF;">${esc(convite.relacao)}</strong>.</p></td></tr>
+para acompanhar a jornada de saúde dele(a) no Glico como <strong style="color:#F5F3FF;">${esc(convite.relacao)}</strong>.</p></td></tr>
 <tr><td style="padding:16px 32px;"><table width="100%"><tr>
 <td style="padding-right:6px;"><a href="${aceitarUrl}" style="display:block;background:#7C5CFF;color:#fff;text-align:center;padding:14px;border-radius:12px;text-decoration:none;font-weight:700;font-size:14px;">✓ Aceitar convite</a></td>
 <td style="padding-left:6px;"><a href="${recusarUrl}" style="display:block;color:#FF6B6B;text-align:center;padding:14px;border-radius:12px;text-decoration:none;font-weight:700;font-size:14px;border:1px solid #FF6B6B;">Recusar</a></td>
@@ -92,7 +92,7 @@ O convite expira em ${esc(expira)}. Se não esperava este e-mail, ignore.</p></t
       body: JSON.stringify({
         from: FROM,
         to: [convite.email],
-        subject: `${nomePaciente} convidou você para o Espaço Familiar do GlyCare`,
+        subject: `${nomePaciente} convidou você para o Espaço Familiar do Glico`,
         html,
       }),
     });

@@ -44,16 +44,16 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
             );
           })}
 
-          {/* GlyCare One — item especial */}
+          {/* Glico One — item especial */}
           <View style={styles.divider} />
           <TouchableOpacity
-            style={[styles.menuItem, styles.gcOneItem, currentRoute === "GlycareOne" && styles.gcOneActive]}
+            style={[styles.menuItem, styles.gcOneItem, currentRoute === "GlicoOne" && styles.gcOneActive]}
             activeOpacity={0.75}
-            onPress={() => props.navigation.navigate("GlycareOne")}
+            onPress={() => props.navigation.navigate("GlicoOne")}
           >
             <Ionicons name="hardware-chip-outline" size={20} color={C.gcOne} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.menuLabel, { color: C.gcOne, fontWeight: "700" }]}>GlyCare One</Text>
+              <Text style={[styles.menuLabel, { color: C.gcOne, fontWeight: "700" }]}>Glico One</Text>
               <Text style={styles.gcOneSub}>Conectar dispositivo</Text>
             </View>
             <View style={styles.gcOneBadge}>
@@ -91,3 +91,17 @@ const styles = StyleSheet.create({
   gcOneBadgeText: { fontFamily: A, fontSize: 9, fontWeight: "700", color: "#4FD1A5" },
   footer:         { paddingHorizontal: 12, paddingBottom: 32 },
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -6,13 +6,12 @@ import {
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
-import { useFonts, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
-import { DMSans_400Regular, DMSans_500Medium } from "@expo-google-fonts/dm-sans";
 import { supabase } from "../lib/supabase";
 
+const A = "Arial";
 const COLORS = {
-  bg: "#1B1B45", card: "#26265C", cardBorder: "#3A3A78",
-  accent: "#4DDFD8", textPrimary: "#FFFFFF", textSec: "#B7B7DA",
+  bg: "#0B0A24", card: "#13122E", cardBorder: "rgba(255,255,255,0.08)",
+  accent: "#7C5CFF", textPrimary: "#F5F3FF", textSec: "#A5A3C7",
 };
 
 type Props = {
@@ -59,9 +58,6 @@ export default function ResultadoScreen({ navigation, route }: Props) {
   const { respostas, dadosCadastro } = route.params;
   const [salvando, setSalvando]      = useState(false);
   const recomendacoes                = buildRecomendacoes(respostas);
-
-  const [fontsLoaded] = useFonts({ Fraunces_700Bold, DMSans_400Regular, DMSans_500Medium });
-  if (!fontsLoaded) return null;
 
   const handleComecar = async () => {
     setSalvando(true);
@@ -168,7 +164,7 @@ export default function ResultadoScreen({ navigation, route }: Props) {
           disabled={salvando}
         >
           {salvando
-            ? <ActivityIndicator color={COLORS.bg} />
+            ? <ActivityIndicator color="#FFFFFF" />
             : <Text style={styles.primaryBtnText}>Começar a usar o app</Text>
           }
         </TouchableOpacity>
@@ -187,15 +183,15 @@ export default function ResultadoScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   safe:             { flex: 1, backgroundColor: COLORS.bg },
   content:          { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 24 },
-  eyebrow:          { color: COLORS.accent, fontSize: 13, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
-  title:            { color: COLORS.textPrimary, fontSize: 26, lineHeight: 33, marginBottom: 10 },
-  subtitle:         { color: COLORS.textSec, fontSize: 14, lineHeight: 20, marginBottom: 28 },
-  card:             { borderRadius: 18, borderWidth: 1, borderColor: COLORS.cardBorder, padding: 18, marginBottom: 14 },
-  cardTitle:        { color: COLORS.textPrimary, fontSize: 16, marginBottom: 6 },
-  cardDesc:         { color: COLORS.textSec, fontSize: 13, lineHeight: 19 },
+  eyebrow:          { color: COLORS.accent, fontFamily: A, fontWeight: "700", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
+  title:            { fontFamily: A, fontWeight: "800", color: COLORS.textPrimary, fontSize: 26, lineHeight: 33, marginBottom: 10 },
+  subtitle:         { fontFamily: A, color: COLORS.textSec, fontSize: 14, lineHeight: 20, marginBottom: 28 },
+  card:             { backgroundColor: COLORS.card, borderRadius: 18, borderWidth: 1, borderColor: COLORS.cardBorder, padding: 18, marginBottom: 14 },
+  cardTitle:        { fontFamily: A, fontWeight: "700", color: COLORS.textPrimary, fontSize: 16, marginBottom: 6 },
+  cardDesc:         { fontFamily: A, color: COLORS.textSec, fontSize: 13, lineHeight: 19 },
   footer:           { paddingHorizontal: 24, paddingVertical: 18 },
   primaryBtn:       { backgroundColor: COLORS.accent, borderRadius: 18, paddingVertical: 16, alignItems: "center", marginBottom: 10 },
-  primaryBtnText:   { color: COLORS.bg, fontSize: 15 },
+  primaryBtnText:   { fontFamily: A, fontWeight: "700", color: "#FFFFFF", fontSize: 15 },
   secondaryBtn:     { alignItems: "center", paddingVertical: 10 },
-  secondaryBtnText: { color: COLORS.textSec, fontSize: 13 },
+  secondaryBtnText: { fontFamily: A, color: COLORS.textSec, fontSize: 13 },
 });

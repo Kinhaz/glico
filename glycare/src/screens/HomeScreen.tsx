@@ -84,7 +84,7 @@ export default function HomeScreen({ navigation }: { navigation?: any }) {
           <TouchableOpacity style={s.headerBtn} onPress={() => navigation?.openDrawer?.()}>
             <Ionicons name="menu" size={22} color={C.text} />
           </TouchableOpacity>
-          <Text style={s.brand}>GlyCare</Text>
+          <Text style={s.brand}>Glico</Text>
           <TouchableOpacity style={s.headerBtn}>
             <Ionicons name="notifications-outline" size={22} color={C.text} />
             <View style={s.bellDot} />

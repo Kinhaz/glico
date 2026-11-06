@@ -119,7 +119,7 @@ export default function RecipeDetailScreen({ navigation, route }: { navigation?:
         <View style={s.tipCard}>
           <View style={s.tipIcon}><Ionicons name="bulb-outline" size={18} color={C.yellow} /></View>
           <View style={{ flex:1 }}>
-            <Text style={s.tipTitle}>Dica GlyCare</Text>
+            <Text style={s.tipTitle}>Dica Glico</Text>
             <Text style={s.tipText}>{recipe.tip}</Text>
           </View>
         </View>

@@ -11,9 +11,9 @@ import { supabase } from "../lib/supabase";
 
 const A = "Arial";
 const C = {
-  bg: "#000000", surface: "#0F0F0F", card: "#1A1A1A",
-  border: "rgba(255,255,255,0.1)", accent: "#4FD1A5",
-  text: "#FFFFFF", muted: "#888888", red: "#FF6B6B",
+  bg: "#0B0A24", surface: "#13122E", card: "#13122E",
+  border: "rgba(255,255,255,0.08)", accent: "#7C5CFF", green: "#4FD1A5",
+  text: "#F5F3FF", muted: "#A5A3C7", red: "#FF6B6B",
 };
 
 type Mode = "menu" | "qrcode" | "codigo";
@@ -60,7 +60,7 @@ function ScanLine() {
   );
 }
 
-export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
+export default function GlicoOneScreen({ navigation }: { navigation?: any }) {
   const [mode,          setMode]          = useState<Mode>("menu");
   const [status,        setStatus]        = useState<Status>("idle");
   const [codigo,        setCodigo]        = useState("");
@@ -95,7 +95,7 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
 
       if (error || !medicao) {
         // Token não encontrado — simula recebimento (dispositivo real envia para o Supabase)
-        // Em produção, o GlyCare One registra a leitura no Supabase com o token
+        // Em produção, o Glico One registra a leitura no Supabase com o token
         throw new Error("Token inválido ou medição não encontrada. Certifique-se de que o dispositivo está conectado.");
       }
 
@@ -109,7 +109,7 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
       setPopupVis(true);
     } catch (err: any) {
       setStatus("erro");
-      Alert.alert("Erro de conexão", err.message ?? "Não foi possível conectar ao GlyCare One.");
+      Alert.alert("Erro de conexão", err.message ?? "Não foi possível conectar ao Glico One.");
       setStatus("idle");
     }
   }
@@ -118,7 +118,7 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
   function handleBarCodeScanned({ data }: { data: string }) {
     if (scanned) return;
     setScanned(true);
-    // GlyCare One gera tokens no formato GC-LOGIN-XXXXXXXX ou QR JSON
+    // Glico One gera tokens no formato GC-LOGIN-XXXXXXXX ou QR JSON
     let token = data;
     try {
       const parsed = JSON.parse(data);
@@ -156,13 +156,13 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
           <View style={styles.menuContainer}>
             <View style={styles.menuHeader}>
               <Ionicons name="hardware-chip-outline" size={40} color={C.accent} style={{ marginBottom: 12 }} />
-              <Text style={styles.menuTitle}>GlyCare One</Text>
+              <Text style={styles.menuTitle}>Glico One</Text>
               <Text style={styles.menuSub}>Conecte seu dispositivo para sincronizar medições automaticamente</Text>
             </View>
 
             <View style={styles.menuCards}>
               <TouchableOpacity style={styles.methodCard} activeOpacity={0.85} onPress={() => setMode("qrcode")}>
-                <View style={[styles.methodIcon, { backgroundColor: "rgba(79,209,165,0.15)" }]}>
+                <View style={[styles.methodIcon, { backgroundColor: "rgba(124,92,255,0.15)" }]}>
                   <Ionicons name="qr-code-outline" size={28} color={C.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -178,13 +178,13 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.methodTitle}>Código do dispositivo</Text>
-                  <Text style={styles.methodSub}>Digite o código exibido na tela do GlyCare One</Text>
+                  <Text style={styles.methodSub}>Digite o código exibido na tela do Glico One</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={C.muted} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.menuHint}>O GlyCare One enviará a medição de glicemia diretamente para sua conta.</Text>
+            <Text style={styles.menuHint}>O Glico One enviará a medição de glicemia diretamente para sua conta.</Text>
           </View>
         )}
 
@@ -212,7 +212,7 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
                   <View style={styles.qrOverlaySide} />
                 </View>
                 <View style={styles.qrOverlayBottom}>
-                  <Text style={styles.qrLabel}>Aponte para o QR Code do GlyCare One</Text>
+                  <Text style={styles.qrLabel}>Aponte para o QR Code do Glico One</Text>
                   {status === "conectando" && <ActivityIndicator color={C.accent} style={{ marginTop: 12 }} />}
                   {scanned && status !== "conectando" && (
                     <TouchableOpacity style={styles.scanAgainBtn} onPress={() => { setScanned(false); setStatus("idle"); }}>
@@ -230,7 +230,7 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.codigoContainer}>
             <Ionicons name="keypad-outline" size={40} color="#60A5FA" style={{ marginBottom: 16 }} />
             <Text style={styles.menuTitle}>Código do dispositivo</Text>
-            <Text style={styles.menuSub}>Digite o código exibido na tela do GlyCare One</Text>
+            <Text style={styles.menuSub}>Digite o código exibido na tela do Glico One</Text>
             <TextInput
               style={styles.codigoInput}
               value={codigo}
@@ -249,7 +249,7 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
               activeOpacity={0.85}
             >
               {status === "conectando"
-                ? <ActivityIndicator color="#000" />
+                ? <ActivityIndicator color="#FFFFFF" />
                 : <Text style={styles.connectBtnText}>Conectar</Text>
               }
             </TouchableOpacity>
@@ -262,10 +262,10 @@ export default function GlycareOneScreen({ navigation }: { navigation?: any }) {
         <View style={styles.popupOverlay}>
           <View style={styles.popupCard}>
             <View style={styles.popupIconWrap}>
-              <Ionicons name="checkmark-circle" size={48} color={C.accent} />
+              <Ionicons name="checkmark-circle" size={48} color={C.green} />
             </View>
             <Text style={styles.popupTitle}>Conectado!</Text>
-            <Text style={styles.popupSub}>GlyCare One sincronizado com sucesso.</Text>
+            <Text style={styles.popupSub}>Glico One sincronizado com sucesso.</Text>
             {glicemiaResult !== null && (
               <View style={styles.glicemiaBox}>
                 <Text style={styles.glicemiaLabel}>Glicemia medida</Text>
@@ -307,27 +307,27 @@ const styles = StyleSheet.create({
   qrOverlayBottom: { flex: 3, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", paddingTop: 32, paddingHorizontal: 24 },
   qrLabel:         { fontFamily: A, fontSize: 16, color: C.text, textAlign: "center" },
   scanAgainBtn:    { marginTop: 16, backgroundColor: C.accent, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24 },
-  scanAgainText:   { fontFamily: A, fontWeight: "700", fontSize: 14, color: "#000" },
+  scanAgainText:   { fontFamily: A, fontWeight: "700", fontSize: 14, color: "#FFFFFF" },
   permissionBox:   { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   permissionText:  { fontFamily: A, fontSize: 16, color: C.text, textAlign: "center", marginBottom: 20 },
   permBtn:         { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24 },
-  permBtnText:     { fontFamily: A, fontWeight: "700", fontSize: 14, color: "#000" },
+  permBtnText:     { fontFamily: A, fontWeight: "700", fontSize: 14, color: "#FFFFFF" },
   // Código
   codigoContainer: { flex: 1, paddingHorizontal: 24, alignItems: "center", justifyContent: "center" },
   codigoInput:     { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, height: 60, width: "100%", textAlign: "center", fontFamily: A, fontSize: 22, fontWeight: "700", color: C.text, letterSpacing: 3, marginTop: 28, marginBottom: 20 },
   connectBtn:      { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 16, width: "100%", alignItems: "center" },
-  connectBtnText:  { fontFamily: A, fontWeight: "700", fontSize: 16, color: "#000" },
+  connectBtnText:  { fontFamily: A, fontWeight: "700", fontSize: 16, color: "#FFFFFF" },
   // Popup
   popupOverlay:    { flex: 1, backgroundColor: "rgba(0,0,0,0.8)", justifyContent: "center", alignItems: "center", padding: 24 },
-  popupCard:       { backgroundColor: "#1A1A1A", borderRadius: 24, padding: 28, width: "100%", alignItems: "center", borderWidth: 1, borderColor: "rgba(79,209,165,0.3)" },
+  popupCard:       { backgroundColor: "#13122E", borderRadius: 24, padding: 28, width: "100%", alignItems: "center", borderWidth: 1, borderColor: "rgba(79,209,165,0.3)" },
   popupIconWrap:   { width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(79,209,165,0.12)", alignItems: "center", justifyContent: "center", marginBottom: 16 },
   popupTitle:      { fontFamily: A, fontWeight: "800", fontSize: 22, color: C.text, marginBottom: 8 },
   popupSub:        { fontFamily: A, fontSize: 14, color: C.muted, textAlign: "center", marginBottom: 20 },
   glicemiaBox:     { backgroundColor: "rgba(79,209,165,0.08)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(79,209,165,0.2)", padding: 16, width: "100%", alignItems: "center", marginBottom: 16 },
   glicemiaLabel:   { fontFamily: A, fontSize: 12, color: C.muted, marginBottom: 4 },
-  glicemiaValue:   { fontFamily: A, fontWeight: "800", fontSize: 36, color: C.accent },
+  glicemiaValue:   { fontFamily: A, fontWeight: "800", fontSize: 36, color: C.green },
   glicemiaUnit:    { fontSize: 16, color: C.muted, fontWeight: "400" },
   popupNote:       { fontFamily: A, fontSize: 12, color: C.muted, textAlign: "center", marginBottom: 20 },
   popupBtn:        { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32 },
-  popupBtnText:    { fontFamily: A, fontWeight: "700", fontSize: 15, color: "#000" },
+  popupBtnText:    { fontFamily: A, fontWeight: "700", fontSize: 15, color: "#FFFFFF" },
 });

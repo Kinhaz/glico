@@ -25,7 +25,7 @@ import EvIMCScreen          from "../screens/EvIMCScreen";
 import EspacoFamiliarScreen from "../screens/EspacoFamiliarScreen";
 import SaudeScreen          from "../screens/SaudeScreen";
 import AnaliseScreen        from "../screens/AnaliseScreen";
-import GlycareOneScreen     from "../screens/GlycareOneScreen";
+import GlicoOneScreen     from "../screens/GlicoOneScreen";
 import AdicionarFamiliarScreen from "../screens/AdicionarFamiliarScreen";
 import ConviteEnviadoScreen from "../screens/ConviteEnviadoScreen";
 import FamiliarDetalhesScreen from "../screens/FamiliarDetalhesScreen";
@@ -57,14 +57,14 @@ function DrawerNavigator() {
         drawerStyle: { backgroundColor: "#1E1B4B", width: 260 },
       })}
     >
-      <Drawer.Screen name="Home"           component={HomeScreen}           options={{ title: "GlyCare",        headerShown: false }} />
+      <Drawer.Screen name="Home"           component={HomeScreen}           options={{ title: "Glico",        headerShown: false }} />
       <Drawer.Screen name="Perfil"         component={PerfilScreen}         options={{ title: "Perfil" }} />
       <Drawer.Screen name="EspacoFamiliar" component={EspacoFamiliarScreen} options={{ title: "Espaço Familiar" }} />
       <Drawer.Screen name="Monitorar"      component={MonitorarScreen}      options={{ title: "Monitorar" }} />
       <Drawer.Screen name="Relatorios"     component={RelatoriosScreen}     options={{ title: "Relatórios" }} />
       <Drawer.Screen name="EvIMC"          component={EvIMCScreen}          options={{ title: "Evolução do IMC" }} />
       <Drawer.Screen name="Configuracoes"  component={ConfiguracoesScreen}  options={{ title: "Configurações" }} />
-      <Drawer.Screen name="GlycareOne"     component={GlycareOneScreen}     options={{ title: "GlyCare One", headerShown: false }} />
+      <Drawer.Screen name="GlicoOne"     component={GlicoOneScreen}     options={{ title: "Glico One", headerShown: false }} />
     </Drawer.Navigator>
   );
 }
@@ -104,7 +104,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Registrar"    component={RegistrarScreen} />
       <Stack.Screen name="Saude"        component={SaudeScreen} />
       <Stack.Screen name="Analise"      component={AnaliseScreen} />
-      <Stack.Screen name="GlycareOne"   component={GlycareOneScreen} />
+      <Stack.Screen name="GlicoOne"   component={GlicoOneScreen} />
       <Stack.Screen name="Receitas"     component={RecipesScreen} />
       <Stack.Screen name="Exercicios"   component={ExercisesScreen} />
       <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />

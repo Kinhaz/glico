@@ -24,7 +24,7 @@ export type RootStackParamList = {
     familiarId: string;
   };
 
-  GlycareOne: undefined;
+  GlicoOne: undefined;
 };
 
 export interface DadosCadastro {
@@ -39,5 +39,5 @@ export type DrawerParamList = {
   Relatorios:     undefined;
   EvIMC:          undefined;
   Configuracoes:  undefined;
-  GlycareOne:     undefined;
+  GlicoOne:     undefined;
 };
