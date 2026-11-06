@@ -13,8 +13,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import {
   buscarConvites,
-  aceitarConvite,
-  recusarConvite,
 } from "../services/convitesService";
 
 const A = "Arial";
@@ -103,23 +101,6 @@ export default function EspacoFamiliarScreen({ navigation }: { navigation?: any 
 
   function adicionarFamiliar() {
     navigation?.navigate("AdicionarFamiliar");
-  }
-
-  async function responderConvite(
-    familiar: Familiar,
-    status: "aceito" | "recusado"
-  ) {
-    try {
-      if (status === "aceito") {
-        await aceitarConvite(familiar.id);
-      } else {
-        await recusarConvite(familiar.id);
-      }
-
-      await carregarFamiliares();
-    } catch (error) {
-      console.error("Erro ao responder convite:", error);
-    }
   }
 
   function abrirFamiliar(familiar: Familiar) {
@@ -233,24 +214,9 @@ export default function EspacoFamiliarScreen({ navigation }: { navigation?: any 
                   {familiar.status === "ativo" ? (
                     <Ionicons name="chevron-forward" size={20} color={C.muted} />
                   ) : familiar.status === "pendente" ? (
-                    <View style={styles.inviteActions}>
-                      <TouchableOpacity
-                        style={styles.acceptButton}
-                        activeOpacity={0.8}
-                        onPress={() => responderConvite(familiar, "aceito")}
-                      >
-                        <Ionicons name="checkmark" size={17} color="#FFFFFF" />
-                        <Text style={styles.acceptButtonText}>Aceitar</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.rejectButton}
-                        activeOpacity={0.8}
-                        onPress={() => responderConvite(familiar, "recusado")}
-                      >
-                        <Ionicons name="close" size={17} color={C.red} />
-                      </TouchableOpacity>
-                    </View>
+                    <Text style={{ color: C.muted, fontSize: 11, maxWidth: 90, textAlign: "right" }}>
+                      Aguardando aceite por e-mail
+                    </Text>
                   ) : null}
                 </TouchableOpacity>
               ))}

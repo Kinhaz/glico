@@ -73,15 +73,15 @@ export default function ConviteEnviadoScreen({ navigation, route }: any) {
           />
 
           <Text style={styles.infoText}>
-            {nome || "Seu familiar"} poderá aceitar ou recusar o convite.
-            Quando houver uma resposta, o status será atualizado no
-            Espaço Familiar.
+            {nome || "Seu familiar"} vai aceitar ou recusar pelo link no e-mail
+            e, ao aceitar, verá no navegador apenas o que você permitiu.
+            O status é atualizado no Espaço Familiar.
           </Text>
         </View>
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation?.navigate("Home")}
+          onPress={() => navigation?.navigate("Home", { screen: "EspacoFamiliar" })}
           activeOpacity={0.85}
         >
           <Text style={styles.buttonText}>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -10,7 +11,7 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-import { criarConvite } from "../services/convitesService";
+import { criarConvite, EmailNaoEnviadoError } from "../services/convitesService";
 
 const C = {
   bg: "#0B0A24",
@@ -136,12 +137,15 @@ export default function AdicionarFamiliarScreen({ navigation }: any) {
     if (!nome.trim() || !email.trim() || !relacao) {
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Alert.alert("E-mail inválido", "Confira o e-mail do familiar.");
+      return;
+    }
 
     try {
       setEnviando(true);
 
       const convite = await criarConvite({
-        pacienteId: "paciente-demo",
         nome: nome.trim(),
         email: email.trim(),
         relacao,
@@ -159,6 +163,14 @@ export default function AdicionarFamiliarScreen({ navigation }: any) {
       });
     } catch (error) {
       console.error("Erro ao criar convite:", error);
+      if (error instanceof EmailNaoEnviadoError) {
+        Alert.alert(
+          "Convite salvo, e-mail não enviado",
+          "O convite foi salvo, mas o e-mail não pôde ser enviado. Verifique a configuração do Resend e tente novamente.\n\n" + error.message
+        );
+      } else {
+        Alert.alert("Erro", "Não foi possível criar o convite. Tente novamente.");
+      }
     } finally {
       setEnviando(false);
     }
