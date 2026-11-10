@@ -5,7 +5,7 @@ import { RootStackParamList } from "../navigation/types";
 
 const A = "Arial";
 const C = { bg:"#0B0A24", surface:"#13122E", border:"rgba(255,255,255,0.08)", accent:"#7C5CFF", text:"#F5F3FF", muted:"#A5A3C7" };
-const LOGO = "https://snipboard.io/uzH3yl.jpg";
+const LOGO = require("../../assets/logo.png");
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList,"Inicio"> };
 
@@ -14,7 +14,7 @@ export default function InicioScreen({ navigation }: Props) {
     <SafeAreaView style={s.safe}>
       <View style={s.container}>
         <View style={s.logoWrap}>
-          <Image source={{ uri: LOGO }} style={s.logo} resizeMode="contain" />
+          <Image source={LOGO} style={s.logo} resizeMode="contain" />
         </View>
         <Text style={s.title}>Controle seu{"\n"}diabetes com{"\n"}inteligência</Text>
         <Text style={s.sub}>Acompanhe sua glicemia, medicações e hábitos num só lugar.</Text>
@@ -35,7 +35,7 @@ const s = StyleSheet.create({
   safe:           { flex:1, backgroundColor:C.bg },
   container:      { flex:1, paddingHorizontal:28, justifyContent:"center" },
   logoWrap:       { alignItems:"center", marginBottom:48 },
-  logo:           { width:160, height:64 },
+  logo:           { width:112, height:112 },
   title:          { fontFamily:A, fontWeight:"800", fontSize:34, color:C.text, lineHeight:42, marginBottom:16 },
   sub:            { fontFamily:A, fontSize:15, color:C.muted, lineHeight:22, marginBottom:48 },
   buttons:        { gap:14 },
